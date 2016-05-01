@@ -254,8 +254,8 @@ Given the availability of an applicative functor on the `Validation` object, the
 How are the errors accumulated? The "left" type parameter of `Validation` must have a `SemiGroup` instance. That's a fancy way of saying that it has an append or concatenate operation at its disposal. This append operation technically must be *associative*, which itself is a fancy way of saying that if we want to concatenate the 3 objects, we can combine the first two, and then add the third at the end, or we can combine the last two and add then add the first one to the front, and either way it will end up the same. The implementation of `apply2` will just invoke the semigroup `append` function to accumulate failures. The implementation is not exactly this, but this is the sense of it:
 
 ```scala
-def apply2[EE, A, B, C](valA: scalaz.Validation[EE, A], valB: scalaz.Validation[EE, B])(f: (A,B) ⇒ C)(implicit E: Semigroup[EE])
-    : scalaz.Validation[EE, C] = (valA, valB) match {
+def apply2[EE, A, B, C](valA: Validation[EE, A], valB: Validation[EE, B])(f: (A,B) ⇒ C)(implicit E: Semigroup[EE])
+    : Validation[EE, C] = (valA, valB) match {
     case (Success(a), Success(b))   ⇒ Success(f(a,b))
     case (e @ Failure(_), Success(_)) ⇒ e
     case (Success(_), e @ Failure(_)) ⇒ e
