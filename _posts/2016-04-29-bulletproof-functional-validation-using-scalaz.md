@@ -312,7 +312,7 @@ Our final robust validation solution couldn't be much simpler:
               repo.search(validKeywords, validMethod, boundingBox) map toJsonString(request)
           }
         action match {
-          case Success(method) ⇒ method()
+          case Success(method) ⇒ method
           case Failure(errors) ⇒ badRequest(errors)
         }
       }
