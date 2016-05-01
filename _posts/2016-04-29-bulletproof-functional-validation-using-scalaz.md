@@ -256,10 +256,10 @@ How are the errors accumulated? The "left" type parameter of `Validation` must h
 ```scala
 def apply2[EE, A, B, C](valA: Validation[EE, A], valB: Validation[EE, B])(f: (A,B) ⇒ C)(implicit E: Semigroup[EE])
     : Validation[EE, C] = (valA, valB) match {
-    case (Success(a), Success(b))   ⇒ Success(f(a,b))
-    case (e @ Failure(_), Success(_)) ⇒ e
-    case (Success(_), e @ Failure(_)) ⇒ e
-    case (Failure(e1), Failure(e2)) ⇒ Failure(E.append(e2, e1))
+    case (Success(a), Success(b))       ⇒ Success(f(a,b))
+    case (e @ Failure(_), Success(_))   ⇒ e
+    case (Success(_), e @ Failure(_))   ⇒ e
+    case (Failure(e1), Failure(e2))     ⇒ Failure(E.append(e2, e1))
 }
 ```
 
