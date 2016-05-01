@@ -144,11 +144,11 @@ Let's start with something on familiar ground, the [`Option` monad](http://stack
         bottomRight = GeoPoint(brLat, brLon)
         boundingBox = BoundingBox(topLeft, bottomRight)
       } yield {
-        repo.search(keywords, sm, boundingBox) map { json => Ok(pretty(json)) }
+        repo.search(keywords, sm, boundingBox) map { json ⇒ Ok(pretty(json)) }
       }
       action match {
-        case Some(thingTodo) => thingTodo
-        case None => Future.successful(BadRequest)
+        case Some(thingTodo)    ⇒ thingTodo
+        case None               ⇒ Future.successful(BadRequest)
       }
     }
   }
@@ -176,7 +176,7 @@ The one way of thinking about `Either` is like a labeled `Option`. Specifically,
         tlLon <- if (isValidLon(topLeftLon)) Right(topLeftLon): Either[String, BigDecimal] else Left("Invalid latitude")
         ...
       } yield {
-        repo.search(keywords, searchMethod, boundingBox) map { json => Ok(pretty(json)) }
+        repo.search(keywords, searchMethod, boundingBox) map { json ⇒ Ok(pretty(json)) }
       }
       ...
     }
@@ -202,7 +202,7 @@ We can use this exactly as with `Either`, but with cleaner syntax, where extensi
         tlLon <- if (isValidLon(topLeftLon)) topLeftLon.success else "Invalid latitude".failure
         ...
       } yield {
-        repo.search(keywords, searchMethod, boundingBox) map { json => Ok(pretty(json)) }
+        repo.search(keywords, searchMethod, boundingBox) map { json ⇒ Ok(pretty(json)) }
       }
       action match {
         case Success(method) ⇒ method
@@ -218,10 +218,10 @@ Warning:(42, 18) method ValidationFlatMapDeprecated in object Validation is depr
                  ^
 ```
 
-This give an indication as to why we are not there yet. The for comprehension syntax, which involves nested `map`s and `flatMap`s under the hood cannot acumulate errors. This is because if the moment a validation fails, the inner `map` function does not get called. This behaviour is baked into the `flatMap` function, and `for` comprehension behaviour, as each validated value is in scope for the statement that follows. Instead we consider an alternative functional mechanism, for which an instance is provided by `Validation`, the *applicative functor*. This turns out to be more suitable by nature for solving the problem at hand. Just as `map` and `flatMap` are the fundamental method of functors and monads respectively, the fundamental method of an applicative functor is `apply2`. `apply2` is a extension of `map` to a second dimension. It is like a `map` on two separate objects at once, where the inner contents of the two objects are formed into a pair, and a function is applied to this pair. If `map` were to represent a select on a single database table, `apply2` would represent a join. For an applicative functor `F[_]`, `apply2` has this signature:
+This give an indication as to why we are not there yet. The for comprehension syntax, which involves nested `map`s and `flatMap`s under the hood, cannot acumulate errors. This is because if the moment a validation fails, the inner `map` function does not get called. This behaviour is baked into the `flatMap` function, and `for` comprehension behaviour, as each validated value is in scope for the statement that follows. Instead we consider an alternative functional mechanism, for which an instance is provided by `Validation`, the *applicative functor*. This turns out to be more suitable by nature for solving the problem at hand. Just as `map` and `flatMap` are the fundamental method of functors and monads respectively, the fundamental method of an applicative functor is `apply2`. `apply2` is a extension of `map` to a second dimension. It is like a `map` on two separate objects at once, where the inner contents of the two objects are formed into a pair, and a function is applied to this pair. If `map` were to represent a select on a single database table, `apply2` would represent a join. For an applicative functor `F[_]`, `apply2` has this signature:
 
 ```scala
-def apply2[A, B, C](fa: => F[A], fb: => F[B])(f: (A, B) => C): F[C] 
+def apply2[A, B, C](fa: ⇒ F[A], fb: ⇒ F[B])(f: (A, B) ⇒ C): F[C] 
 ```
 
 We start by transforming the familiar `for` comprehension syntax:
@@ -244,14 +244,25 @@ val action = (
     validateB |@| 
     validateC
     ) {
-    (a, b, c) => doSomething(a, b, c)
+    (a, b, c) ⇒ doSomething(a, b, c)
 }
 ```
 Not as expressive as the original for comprehension syntax, but still elegant enough. In the latter case, all three `validate` operations are called, regardless of whether the other operations fail or not, and `a` is clearly not in scope for `validateB` and `validateC`. Only if they all succeed is `doSomething` is called, and if any of them fail, this action is bypassed, and the list of errors is returned. There are instances where we can only validate a parameter once we have a valid value of another parameter. For example, we expect that `bottomRightLat > toLeftLon`. For such cases we can use `flatMap` / `for` comprehensions, and in practice we will end up with a combination of `for`s and `|@|`s. If we are using `for`s we may want to include `import scalaz.Validation.FlatMap._` as suggested by the compiler warning. 
 
 Given the availability of an applicative functor on the `Validation` object, the `|@|` operator is a convenient bit of Scalaz shorthand wizardry that instantiates this applicative functor, and invokes the `apply2` method on it. It's even smart enough to combine chained `|@|` operations into calls to `applyN`.
 
-How are the errors accumulated? The "left" type parameter of `Validation` must have a `SemiGroup` instance. That's a fancy way of saying that it has an append or concatenate operation at its disposal. This append operation technically must be *associative*, which itself is a fancy way of saying that if we want to concatenate the 3 objects, we can combine the first two, and then add the third at the end, or we can combine the last two and add then add the first one to the front, and either way it will end up the same. 
+How are the errors accumulated? The "left" type parameter of `Validation` must have a `SemiGroup` instance. That's a fancy way of saying that it has an append or concatenate operation at its disposal. This append operation technically must be *associative*, which itself is a fancy way of saying that if we want to concatenate the 3 objects, we can combine the first two, and then add the third at the end, or we can combine the last two and add then add the first one to the front, and either way it will end up the same. The implementation of `apply2` will just invoke the semigroup `append` function to accumulate failures. The implementation is not exactly this, but this is the sense of it:
+
+```scala
+/** Apply a function in the environment of the success of this validation, accumulating errors. */
+def apply2[EE, A, B, C](valA: scalaz.Validation[EE, A], valB: scalaz.Validation[EE, B])(f: (A,B) ⇒ C)(implicit E: Semigroup[EE])
+    : scalaz.Validation[EE, C] = (valA, valB) match {
+    case (Success(a), Success(b))   ⇒ Success(f(a,b))
+    case (e @ Failure(_), Success(_)) ⇒ e
+    case (Success(_), e @ Failure(_)) ⇒ e
+    case (Failure(e1), Failure(e2)) ⇒ Failure(E.append(e2, e1))
+}
+```
 
 The most useful concrete case for the left parameter type is a `List` (which is clearly a `SemiGroup`), and specifically a non-empty list, as `Failure(List())` does not make any sense. So useful is it, that there is a special Scalaz type, `ValidationNel`, with some of it's own additional features. 
 
@@ -266,15 +277,15 @@ This is what we end up using. We can rewrite our controller code as follows:
         tlLat <- if (isValidLat(topLeftLat)) topLeftLat.successNel else "Invalid latitude".failureNel |@|
         tlLon <- if (isValidLon(topLeftLon)) topLeftLon.successNel else "Invalid latitude".failureNel |@|
         ...
-      ) { (tlLat, tlLon, ..., sm) => 
+      ) { (tlLat, tlLon, ..., sm) ⇒ 
         val topLeft = GeoPoint(topLeftLat, topLeftLon)
         val bottomRight = GeoPoint(bottomRightLat, bottomRightLon)
         val boundingBox = BoundingBox(topLeft, bottomRight)
-        repo.search(keywords, sm, boundingBox) map { json => Ok(pretty(json)) }
+        repo.search(keywords, sm, boundingBox) map { json ⇒ Ok(pretty(json)) }
       }
       action match {
-        case Success(method) ⇒ method
-        case Failure(NonEmptyList(errors)) ⇒ badRequest(errors)
+        case Success(method)                ⇒ method
+        case Failure(NonEmptyList(errors))  ⇒ badRequest(errors)
       }
 ```
 
