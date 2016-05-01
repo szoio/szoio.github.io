@@ -135,11 +135,11 @@ Let's start with something on familiar ground, the [`Option` monad](http://stack
 
     Action.async { request: Request[AnyContent] ⇒
       val action: Option[Future[Result]] = for {
-        tlLat <- if (isValidLat(topLeftLat)) Some(topLeftLat) else None
-        tlLon <- if (isValidLon(topLeftLon)) Some(topLeftLon) else None
-        brLat <- if (isValidLat(bottomRightLat)) Some(bottomRightLat) else None
-        brLon <- if (isValidLon(bottomRightLon)) Some(bottomRightLon) else None
-        sm <- if (isValidSearchMethod(searchMethod)) Some(searchMethod) else None
+        tlLat ← if (isValidLat(topLeftLat)) Some(topLeftLat) else None
+        tlLon ← if (isValidLon(topLeftLon)) Some(topLeftLon) else None
+        brLat ← if (isValidLat(bottomRightLat)) Some(bottomRightLat) else None
+        brLon ← if (isValidLon(bottomRightLon)) Some(bottomRightLon) else None
+        sm ← if (isValidSearchMethod(searchMethod)) Some(searchMethod) else None
         topLeft = GeoPoint(tlLat, tlLon)
         bottomRight = GeoPoint(brLat, brLon)
         boundingBox = BoundingBox(topLeft, bottomRight)
@@ -172,8 +172,8 @@ The one way of thinking about `Either` is like a labeled `Option`. Specifically,
   def search(...) = {
     Action.async { request: Request[AnyContent] ⇒
       val action: Either[String, Future[Result]] = for {
-        tlLat <- if (isValidLat(topLeftLat)) Right(topLeftLat): Either[String, BigDecimal] else Left("Invalid latitude")
-        tlLon <- if (isValidLon(topLeftLon)) Right(topLeftLon): Either[String, BigDecimal] else Left("Invalid latitude")
+        tlLat ← if (isValidLat(topLeftLat)) Right(topLeftLat): Either[String, BigDecimal] else Left("Invalid latitude")
+        tlLon ← if (isValidLon(topLeftLon)) Right(topLeftLon): Either[String, BigDecimal] else Left("Invalid latitude")
         ...
       } yield {
         repo.search(keywords, searchMethod, boundingBox) map { json ⇒ Ok(pretty(json)) }
@@ -198,8 +198,8 @@ We can use this exactly as with `Either`, but with cleaner syntax, where extensi
 
 ```scala
       val action: scalaz.Validation[String, Future[Result]] = for {
-        tlLat <- if (isValidLat(topLeftLat)) topLeftLat.success else "Invalid latitude".failure
-        tlLon <- if (isValidLon(topLeftLon)) topLeftLon.success else "Invalid latitude".failure
+        tlLat ← if (isValidLat(topLeftLat)) topLeftLat.success else "Invalid latitude".failure
+        tlLon ← if (isValidLon(topLeftLon)) topLeftLon.success else "Invalid latitude".failure
         ...
       } yield {
         repo.search(keywords, searchMethod, boundingBox) map { json ⇒ Ok(pretty(json)) }
@@ -228,9 +228,9 @@ We start by transforming the familiar `for` comprehension syntax:
 
 ```scala
 val action = for {
-    a <- validateA
-    b <- validateB
-    c <- validateC
+    a ← validateA
+    b ← validateB
+    c ← validateC
 } yield {
     doSomething(a, b, c)
 }
@@ -273,8 +273,8 @@ This is what we end up using. We can rewrite our controller code as follows:
 
 ```scala
       val action: scalaz.ValidationNel[String, Future[Result]] = (
-        tlLat <- if (isValidLat(topLeftLat)) topLeftLat.successNel else "Invalid latitude".failureNel |@|
-        tlLon <- if (isValidLon(topLeftLon)) topLeftLon.successNel else "Invalid latitude".failureNel |@|
+        tlLat ← if (isValidLat(topLeftLat)) topLeftLat.successNel else "Invalid latitude".failureNel |@|
+        tlLon ← if (isValidLon(topLeftLon)) topLeftLon.successNel else "Invalid latitude".failureNel |@|
         ...
       ) { (tlLat, tlLon, ..., sm) ⇒ 
         val topLeft = GeoPoint(topLeftLat, topLeftLon)
