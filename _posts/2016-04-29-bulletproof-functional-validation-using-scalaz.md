@@ -223,7 +223,8 @@ This give an indication as to why we are not there yet. The for comprehension sy
 ```scala
 def apply2[A, B, C](fa: ⇒ F[A], fb: ⇒ F[B])(f: (A, B) ⇒ C): F[C] 
 ```
-* &#42;Actually a applicative functor is defined as structure with the following method, which is equivalent to `apply2` - consider this an exercise!*
+
+** &#42;Actually a applicative functor is defined as structure with the following method, which is equivalent to `apply2` - consider this an exercise!**
 
 ```scala
 def ap[A,B](fa: => F[A])(f: => F[A => B]): F[B]
