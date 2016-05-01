@@ -73,30 +73,30 @@ In terms of output we require:
 Here is our first attempt at validation, just to see how ugly it can get:
 
 ```scala
-    def search(keywords: String, 
-            topLeftLat: BigDecimal, 
-            topLeftLon: BigDecimal, 
-            bottomRightLat: BigDecimal,
-            bottomRightLon: BigDecimal, 
-            searchMethod: String) = {
+def search(keywords: String, 
+        topLeftLat: BigDecimal, 
+        topLeftLon: BigDecimal, 
+        bottomRightLat: BigDecimal,
+        bottomRightLon: BigDecimal, 
+        searchMethod: String) = {
 
-        if (topLeftLat < -90 || topLeftLat > 90) {
-            Future.successful(badRequest("topLeftLat must be between -90 and 90")) 
+    if (topLeftLat < -90 || topLeftLat > 90) {
+        Future.successful(badRequest("topLeftLat must be between -90 and 90")) 
+    } else {
+        if (bottomRightLat < -90 || bottomRightLat > 90) {
+            Future.successful(badRequest("bottomRightLat must be between -90 and 90")) 
         } else {
-            if (bottomRightLat < -90 || bottomRightLat > 90) {
-                Future.successful(badRequest("bottomRightLat must be between -90 and 90")) 
-            } else {
-                Action.async { request: Request[AnyContent] ⇒
-                    val topLeft = GeoPoint(topLeftLat, topLeftLon)
-                    val bottomRight = GeoPoint(bottomRightLat, bottomRightLon)
-                    val boundingBox = BoundingBox(topLeft, bottomRight)
-                    val searchMethod = getListingSearchMethod(searchMethodOption)
-                    val listings: Future[JValue] = repo.search(keywords, searchMethod, boundingBox)
-                    listings map { json ⇒ Ok(pretty(json)) }
-                }
+            Action.async { request: Request[AnyContent] ⇒
+                val topLeft = GeoPoint(topLeftLat, topLeftLon)
+                val bottomRight = GeoPoint(bottomRightLat, bottomRightLon)
+                val boundingBox = BoundingBox(topLeft, bottomRight)
+                val searchMethod = getListingSearchMethod(searchMethodOption)
+                val listings: Future[JValue] = repo.search(keywords, searchMethod, boundingBox)
+                listings map { json ⇒ Ok(pretty(json)) }
             }
         }
-
+    }
+}
 ```
 
 That's probably a good time to give this approach up as a bad idea. We've only validated the range of the lattitudes, and we're already 2 nested levels of `if` statements deep before we get to the meat of it. We would have avoided the nesting by returning straight out of the function with the required error value. That would have been acceptable in Javaland, but it has problems of its own, and is frowned upon as a practice in Scala. This is unaccepable; it's a bread-and-butter action, and we want these sort of things to be done in idiomatic Scala. 
@@ -122,36 +122,36 @@ Stepping back, what are requirements for good validation:
 Let's start with something on familiar ground, the [`Option` monad](http://stackoverflow.com/questions/25361203/what-exactly-makes-option-a-monad-in-scala), and work from there, even though it will be inadequate in obvious ways. 
 
 ```scala
-  def isValidLat(lat: BigDecimal): Boolean = ???
-  def isValidLon(lon: BigDecimal): Boolean = ???
-  def isValidSearchMethod(method: String): Boolean = ???
+def isValidLat(lat: BigDecimal): Boolean = ???
+def isValidLon(lon: BigDecimal): Boolean = ???
+def isValidSearchMethod(method: String): Boolean = ???
 
-  def search(keywords: String,
-             topLeftLat: BigDecimal,
-             topLeftLon: BigDecimal,
-             bottomRightLat: BigDecimal,
-             bottomRightLon: BigDecimal,
-             searchMethod: String) = {
+def search(keywords: String,
+         topLeftLat: BigDecimal,
+         topLeftLon: BigDecimal,
+         bottomRightLat: BigDecimal,
+         bottomRightLon: BigDecimal,
+         searchMethod: String) = {
 
-    Action.async { request: Request[AnyContent] ⇒
-      val action: Option[Future[Result]] = for {
-        tlLat ← if (isValidLat(topLeftLat)) Some(topLeftLat) else None
-        tlLon ← if (isValidLon(topLeftLon)) Some(topLeftLon) else None
-        brLat ← if (isValidLat(bottomRightLat)) Some(bottomRightLat) else None
-        brLon ← if (isValidLon(bottomRightLon)) Some(bottomRightLon) else None
-        sm ← if (isValidSearchMethod(searchMethod)) Some(searchMethod) else None
-        topLeft = GeoPoint(tlLat, tlLon)
-        bottomRight = GeoPoint(brLat, brLon)
-        boundingBox = BoundingBox(topLeft, bottomRight)
-      } yield {
-        repo.search(keywords, sm, boundingBox) map { json ⇒ Ok(pretty(json)) }
-      }
-      action match {
-        case Some(thingTodo)    ⇒ thingTodo
-        case None               ⇒ Future.successful(BadRequest)
-      }
-    }
+Action.async { request: Request[AnyContent] ⇒
+  val action: Option[Future[Result]] = for {
+    tlLat ← if (isValidLat(topLeftLat)) Some(topLeftLat) else None
+    tlLon ← if (isValidLon(topLeftLon)) Some(topLeftLon) else None
+    brLat ← if (isValidLat(bottomRightLat)) Some(bottomRightLat) else None
+    brLon ← if (isValidLon(bottomRightLon)) Some(bottomRightLon) else None
+    sm ← if (isValidSearchMethod(searchMethod)) Some(searchMethod) else None
+    topLeft = GeoPoint(tlLat, tlLon)
+    bottomRight = GeoPoint(brLat, brLon)
+    boundingBox = BoundingBox(topLeft, bottomRight)
+  } yield {
+    repo.search(keywords, sm, boundingBox) map { json ⇒ Ok(pretty(json)) }
   }
+  action match {
+    case Some(thingTodo)    ⇒ thingTodo
+    case None               ⇒ Future.successful(BadRequest)
+  }
+}
+}
 ```
 
 We've added some validation methods, and wrapped the logic in a for comprehension. We only unwrap it at the end to execute the `search` method if all the parameters are valid, and to return a `BadRequest` if validation fails. This already goes a long way to the solution. We've managed to avoid all nested `if` statements, and avoid obfuscating the code. But the obvious problem with it is that we have no way of knowing what went wrong if validation does fail.
@@ -169,7 +169,7 @@ case class Right[+E, +A](a: A) extends Either[E, A]
 The one way of thinking about `Either` is like a labeled `Option`. Specifically, `Right` is analogous to `Some` and `Left` is a labeled `None`. Think or it as a branching structure where normal execution takes us `Right` and unexpected execution takes us `Left` (think of the Latin for right and left, *dexter* and *sinister* respectively, if this helps to remember). So we can use the `Left` to store what went wrong. All the usual operations, like `map` and `flatMap` operations operate on the `Right`, and do nothing to the `Left`.
 
 ```scala
-  def search(...) = {
+def search(...) = {
     Action.async { request: Request[AnyContent] ⇒
       val action: Either[String, Future[Result]] = for {
         tlLat ← if (isValidLat(topLeftLat)) Right(topLeftLat): Either[String, BigDecimal] else Left("Invalid latitude")
@@ -180,7 +180,7 @@ The one way of thinking about `Either` is like a labeled `Option`. Specifically,
       }
       ...
     }
-  }
+}
 ```
 
 ## Ramping up to Scalaz
@@ -197,17 +197,17 @@ case class Failure[E](e: E) extends Validation[E, Nothing]
 We can use this exactly as with `Either`, but with cleaner syntax, where extension methods `success` and `failure` are provided:
 
 ```scala
-      val action: scalaz.Validation[String, Future[Result]] = for {
-        tlLat ← if (isValidLat(topLeftLat)) topLeftLat.success else "Invalid latitude".failure
-        tlLon ← if (isValidLon(topLeftLon)) topLeftLon.success else "Invalid latitude".failure
-        ...
-      } yield {
-        repo.search(keywords, searchMethod, boundingBox) map { json ⇒ Ok(pretty(json)) }
-      }
-      action match {
-        case Success(method) ⇒ method
-        case Failure(errors) ⇒ badRequest(errors)
-      }
+  val action: scalaz.Validation[String, Future[Result]] = for {
+    tlLat ← if (isValidLat(topLeftLat)) topLeftLat.success else "Invalid latitude".failure
+    tlLon ← if (isValidLon(topLeftLon)) topLeftLon.success else "Invalid latitude".failure
+    ...
+  } yield {
+    repo.search(keywords, searchMethod, boundingBox) map { json ⇒ Ok(pretty(json)) }
+  }
+  action match {
+    case Success(method) ⇒ method
+    case Failure(errors) ⇒ badRequest(errors)
+  }
 ```
 
 The syntax is a little cleaner, the type hints are not necessary, but otherwise it works exactly the same. However it generates the following compiler warning:
@@ -272,20 +272,20 @@ type ValidationNel[+E, +X] = Validation[NonEmptyList[E], X]
 This is what we end up using. We can rewrite our controller code as follows:
 
 ```scala
-      val action: scalaz.ValidationNel[String, Future[Result]] = (
-        tlLat ← if (isValidLat(topLeftLat)) topLeftLat.successNel else "Invalid latitude".failureNel |@|
-        tlLon ← if (isValidLon(topLeftLon)) topLeftLon.successNel else "Invalid latitude".failureNel |@|
-        ...
-      ) { (tlLat, tlLon, ..., sm) ⇒ 
-        val topLeft = GeoPoint(topLeftLat, topLeftLon)
-        val bottomRight = GeoPoint(bottomRightLat, bottomRightLon)
-        val boundingBox = BoundingBox(topLeft, bottomRight)
-        repo.search(keywords, sm, boundingBox) map { json ⇒ Ok(pretty(json)) }
-      }
-      action match {
-        case Success(method)                ⇒ method
-        case Failure(NonEmptyList(errors))  ⇒ badRequest(errors)
-      }
+  val action: scalaz.ValidationNel[String, Future[Result]] = (
+    tlLat ← if (isValidLat(topLeftLat)) topLeftLat.successNel else "Invalid latitude".failureNel |@|
+    tlLon ← if (isValidLon(topLeftLon)) topLeftLon.successNel else "Invalid latitude".failureNel |@|
+    ...
+  ) { (tlLat, tlLon, ..., sm) ⇒ 
+    val topLeft = GeoPoint(topLeftLat, topLeftLon)
+    val bottomRight = GeoPoint(bottomRightLat, bottomRightLon)
+    val boundingBox = BoundingBox(topLeft, bottomRight)
+    repo.search(keywords, sm, boundingBox) map { json ⇒ Ok(pretty(json)) }
+  }
+  action match {
+    case Success(method)                ⇒ method
+    case Failure(NonEmptyList(errors))  ⇒ badRequest(errors)
+  }
 ```
 
 `successNel` and `failureNel` are syntactic sugar extension methods. For example, `"Invalid latitude".failureNel` is the same as `Failure(NonEmptyList("Invalid latitude"))`. 
@@ -314,18 +314,18 @@ private def getValidBoundingBox(topLeftLat: BigDecimal,
 Our final robust validation solution couldn't be much simpler:
 
 ```scala
-      Action.async { request: Request[AnyContent] ⇒
-        val action = (getValidKeywords(keywords) |@|
-                      getValidSearchMethod(searchMethod) |@|
-                      getValidBoundingBox(topLeftLat, topLeftLon, bottomRightLat, bottomRightLon)) {
-            (validKeywords, validMethod, boundingBox) ⇒
-              repo.search(validKeywords, validMethod, boundingBox) map toJsonString(request)
-          }
-        action match {
-          case Success(method) ⇒ method
-          case Failure(errors) ⇒ badRequest(errors)
-        }
+  Action.async { request: Request[AnyContent] ⇒
+    val action = (getValidKeywords(keywords) |@|
+                  getValidSearchMethod(searchMethod) |@|
+                  getValidBoundingBox(topLeftLat, topLeftLon, bottomRightLat, bottomRightLon)) {
+        (validKeywords, validMethod, boundingBox) ⇒
+          repo.search(validKeywords, validMethod, boundingBox) map toJsonString(request)
       }
+    action match {
+      case Success(method) ⇒ method
+      case Failure(errors) ⇒ badRequest(errors)
+    }
+  }
 ```
 
 The great thing is we can factor out validation method as we like, and all validation errors get hoovered up and stored in the order they occurred, and the main action method only gets executed if all validation succeeds. If there are validation errors, the response to the client may look like this:
