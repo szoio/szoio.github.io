@@ -5,7 +5,7 @@ title: Bulletproof Functional Validation using Scalaz
 date: 2016-04-29
 ---
 
-As a backend developer is going to want to expose your efforts through an API, say a REST API. Your API may even be publicly exposed, which means you can't even trust that the caller has good intentions. Good validation of the incoming parameters is essential. However it is not that easy to achieve with conventional imperative code, at least not in a way that is very messy and obscures the intent of the code itself. We investigate a functional paradigm for validation, step-by-step, using the Scalaz `ValidationNel` applicative functor. As an example, we apply it to a Play REST endpoint.
+As a backend developer, you are going to want to expose your efforts through an API such as a REST API. Your API may even be publicly exposed, which means you can't even trust that the caller has good intentions. Good validation of the incoming parameters is essential. However it is not that easy to achieve with conventional imperative code, at least not in a way that is very messy and obscures the intent of the code itself. We investigate a functional paradigm for validation, step-by-step, using the Scalaz `ValidationNel` applicative functor. As an example, we apply it to a Play REST endpoint.
 
 Consider a Play webservice with a single endpoint, taking 6 parameters. Here is the `routes` file:
 
