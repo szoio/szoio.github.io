@@ -253,7 +253,7 @@ Given the availability of an applicative functor on the `Validation` object, the
 
 How are the errors accumulated? The "left" type parameter of `Validation` must have a `SemiGroup` instance. That's a fancy way of saying that it has an append or concatenate operation at its disposal. This append operation technically must be *associative*, which itself is a fancy way of saying that if we want to concatenate the 3 objects, we can combine the first two, and then add the third at the end, or we can combine the last two and add then add the first one to the front, and either way it will end up the same. 
 
-The most useful concrete case for the left parameter type is a `List` (which is clearly a `SemiGroup`), and specifically a non-empty list, as `Failure(List())` does not make any sense. So much so, that there is a special Scalaz type, `ValidationNel` with some of it's own additional features. 
+The most useful concrete case for the left parameter type is a `List` (which is clearly a `SemiGroup`), and specifically a non-empty list, as `Failure(List())` does not make any sense. So useful is it, that there is a special Scalaz type, `ValidationNel` with some of it's own additional features. 
 
 ```scala
 type ValidationNel[+E, +X] = Validation[NonEmptyList[E], X]
