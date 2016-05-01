@@ -218,13 +218,13 @@ Warning:(42, 18) method ValidationFlatMapDeprecated in object Validation is depr
                  ^
 ```
 
-This give an indication as to why we are not there yet. The for comprehension syntax, which involves nested `map`s and `flatMap`s under the hood, cannot acumulate errors. This is because if the moment a validation fails, the inner `map` function does not get called. This behaviour is baked into the `flatMap` function, and `for` comprehension behaviour, as each validated value is in scope for the statement that follows. Instead we consider an alternative functional mechanism, for which an instance is provided by `Validation`, the *applicative functor*. This turns out to be more suitable by nature for solving the problem at hand. Just as `map` and `flatMap` are the fundamental method of functors and monads respectively, the fundamental method of an applicative functor is `apply2` &#42;. `apply2` is a extension of `map` to a second dimension. It is like a `map` on two separate objects at once, where the inner contents of the two objects are formed into a pair, and a function is applied to this pair. If `map` were to represent a select on a single database table, `apply2` would represent a join. For an applicative functor `F[_]`, `apply2` has this signature:
+This give an indication as to why we are not there yet. The for comprehension syntax, which involves nested `map`s and `flatMap`s under the hood, cannot acumulate errors. This is because if the moment a validation fails, the inner `map` function does not get called. This behaviour is baked into the `flatMap` function, and `for` comprehension behaviour, as each validated value is in scope for the statement that follows. Instead we consider an alternative functional mechanism, for which an instance is provided by `Validation`, the *applicative functor*. This turns out to be more suitable by nature for solving the problem at hand. Just as `map` and `flatMap` are the fundamental method of functors and monads respectively, the fundamental method of an applicative functor is `apply2`&#42;. `apply2` is a extension of `map` to a second dimension. It is like a `map` on two separate objects at once, where the inner contents of the two objects are formed into a pair, and a function is applied to this pair. If `map` were to represent a select on a single database table, `apply2` would represent a join. For an applicative functor `F[_]`, `apply2` has this signature:
 
 ```scala
 def apply2[A, B, C](fa: ⇒ F[A], fb: ⇒ F[B])(f: (A, B) ⇒ C): F[C] 
 ```
 
-** &#42;Actually a applicative functor is defined as structure with the following method, which is equivalent to `apply2` - consider this an exercise!**
+*&#42;Actually a applicative functor is defined as structure with the following method, which is equivalent to `apply2` - consider this an exercise!*
 
 ```scala
 def ap[A,B](fa: => F[A])(f: => F[A => B]): F[B]
