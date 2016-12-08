@@ -13,11 +13,12 @@ But hang on, doesn't that sound like an interface in object oriented programming
 
 2. Free monads are data. They are sometimes referred to as a *"program that describes a program"*, but the actually *"a data structure that represents a program that describes a program"*. 
 
-Free monads are a quite a difficult concept to get your head around, but they are easy to work with. This blog is not intended as a comprehensive description on free monads. There are quite a few resources for that:- here is quite a nice free reading description of free monads:
+Free monads are a quite a difficult concept to get your head around, but they are easy to work with. This blog is not intended as a comprehensive description or tutorial on free monads. There are quite a few resources for that:- here is quite a nice free reading introduction:
 http://perevillega.com/understanding-free-monads
 There's also many excellent talks available online, and of course [Red functional programming book](https://www.manning.com/books/functional-programming-in-scala) is a classic and always to be recommended, and describes the pattern from first principles.
 
-Instead the point of this post is to relate free monads to [*event sourcing*](http://martinfowler.com/eaaDev/EventSourcing.html), another well known and very worthwhile pattern. The principle of event sourcing relates to data storage and management. It suggests a different way of thinking about your data in which the current database state is not the fundamental source of truth, but the ordered sequence of events that were used to get it into this state. Databases are generally mutable, and their state is modified by create, update and delete operations (everything but the read in the so called CRUD operations). This sequence of events that describe these mutations are themselves immutable, and together constitute an append-only event log. Event sourcing is treating this event log as the source of truth, and the database as a projection or snapshot in time of the cumulative history of events.
+Instead the point of this post is to relate free monads to [*event sourcing*](http://martinfowler.com/eaaDev/EventSourcing.html), another well known and very worthwhile pattern. The principle of event sourcing relates to data storage and management. It suggests a different way of thinking about your data in which the current database state is not the fundamental source of truth, but the ordered sequence of events that were used to get it into this state. Databases are generally mutable, and their state is modified by create, update and delete operations (everything but the read in the so called CRUD operations). This sequence of events that describe these mutations are themselves immutable, and together constitute an append-only event log. Event sourcing is treating this event log as the source of truth, and the database as a derived
+projection or snapshot in time of this cumulative history.
 
 There are numerous benefits to event sourcing, including but not limited to:
 1. *Audit trail* - having a complete sequence of timestamped events enables you to rewind your database state to any point in time.
@@ -38,26 +39,42 @@ Free monads enable you to simplify your thinking about a programming task. When 
 ```scala
 sealed trait ShipLocation
 case object AtSea extends ShipLocation
-case class InPort(placeCode: PlaceCode) extends ShipLocation
+case class InPort(place: PortCode) extends ShipLocation
 
 sealed trait ShipOp[A]
 
 object ShipOp {
   // Commands
-  case class AddPlace(name: String, placeCode: PlaceCode) extends ShipOp[Unit]
-  case class AddShip(name: String, shipCode: ShipCode) extends ShipOp[Unit]
-  case class Departure(shipCode: ShipCode, placeCode: PlaceCode, time: DateTime) extends ShipOp[Unit]
-  case class Arrival(shipCode: ShipCode, placeCode: PlaceCode, time: DateTime) extends ShipOp[Unit]
-  case class Load(shipCode: ShipCode, placeCode: PlaceCode, time: DateTime) extends ShipOp[Unit]
-  case class Unload(shipCode: ShipCode, placeCode: PlaceCode, time: DateTime) extends ShipOp[Unit]
+  case class AddPort(name: String, code: PortCode) extends ShipOp[Unit]
+  case class AddShip(name: String, code: ShipCode) extends ShipOp[Unit]
+  case class Departure(ship: ShipCode, place: PortCode, time: DateTime) extends ShipOp[Unit]
+  case class Arrival(ship: ShipCode, place: PortCode, time: DateTime) extends ShipOp[Unit]
+  case class Load(ship: ShipCode, place: PortCode, time: DateTime) extends ShipOp[Unit]
+  case class Unload(ship: ShipCode, place: PortCode, time: DateTime) extends ShipOp[Unit]
 
   // Queries
-  case class GetLocation(ship)
+  case class GetLocation(ship): extends ShipOp[Location]
 }
-
 ```
 
+And then create a program that comprises instructions from the algebra:
 
+```scala
+val program = for {
+  _ <- AddPlace("Los Angeles", PortCode.la).freeM
+  _ <- AddPlace("San Francisco", PortCode.sfo).freeM
+  _ <- AddShip("King Roy", ShipCode.kr).freeM
+  ...
+  _ <- Departure(ShipCode.kr, PortCode.sf).freeM
+  ...
+  _ <- Arrival(ShipCode.kr, PortCode.la).freeM
+  location <- GetLocation(ShipCode.kr)
+} yield location
+```
+
+`freeM` is an extension method that lifts 
+
+And finally, create an interpreter, which is a natural transformation 
 
 
 
