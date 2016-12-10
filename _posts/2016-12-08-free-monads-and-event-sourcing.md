@@ -9,7 +9,7 @@ Since delving into free monads in recent times, they have become ubiquitous in o
 
 But hang on, doesn't that sound like an interface in object oriented programming? Yes, there are similarities. But they are differences some pretty major differences, such as:
 
-1. Free monads are closed under monadic operations, in the mathematical sense. Just like a vector space is closed under linear operations. This means that any set of monadic operations, such as maps, flatmaps as well as extension such as traverses can be performed on a free monad, and it still a free monad - it retains its essential nature. Monadic operations are by no means all-encompassing, but are often rich and expressive enough to capture a wide range of applications within the intended domain. So you can create an entire program that itself is also a free monad of teh same type, in a way that will be illustrated below. You certainly can't say anything like that about interfaces in OO! 
+1. Free monads are closed under monadic operations, in the mathematical sense. Just like a vector space is closed under linear operations. This means that any set of monadic operations, such as maps, flatmaps as well as extension such as traverses can be performed on a free monad, and it still a free monad - it retains its essential nature. Monadic operations are by no means all-encompassing, but are often rich and expressive enough to capture a wide range of applications within the intended domain. So you can create an entire program that itself is also a free monad of the same type, in a way that will be illustrated below. You certainly can't say anything like that about interfaces in OO! 
 
 2. Free monads are data. They are sometimes referred to as a *"program that describes a program"*, but the actually *"a data structure that represents a program that describes a program"*. 
 
@@ -153,7 +153,7 @@ Here `publishEvent` does whatever we need it to do, writes it to a log in NoSQL 
 
 What makes it work so well is: 
 
-* The instructions are operations in `ShipOp` are the very events we need to capture, and they are already nicely formatted in data (case) classes for serialisation.
+* The instructions are operations in `ShipOp` are the very events we need to capture, and they are already nicely formatted in data classes (specifically case classes in Scala) for serialisation.
 * The program has no need to even know that it is generating events for event sourcing capture. This is quite different from the imperative/OO case where there is quite a lot of ceremony `EventProcessor` code in the main program body.
 * Even the interpreter doesn't need to know about event sourcing taking place. It just receives the event/instruction after its been logged, and processes it as normal.
 
