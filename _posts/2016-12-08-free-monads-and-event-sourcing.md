@@ -55,11 +55,11 @@ sealed trait ShipOp[A]
 
 object ShipOp {
   // Commands
-  case class AddPort(name: String, code: PortCode) extends ShipOp[Unit]
-  case class AddShip(name: String, code: ShipCode) extends ShipOp[Unit]
+  case class AddPort(name: String, code: PortCode)                   extends ShipOp[Unit]
+  case class AddShip(name: String, code: ShipCode)                   extends ShipOp[Unit]
   case class Departure(ship: ShipCode, place: PortCode, time: DateTime) extends ShipOp[Boolean]
   case class Arrival(ship: ShipCode, place: PortCode, time: DateTime) extends ShipOp[Boolean]
-  case class Load(ship: ShipCode, place: PortCode, time: DateTime) extends ShipOp[Unit]
+  case class Load(ship: ShipCode, place: PortCode, time: DateTime)   extends ShipOp[Unit]
   case class Unload(ship: ShipCode, place: PortCode, time: DateTime) extends ShipOp[Unit]
 
   // Queries
