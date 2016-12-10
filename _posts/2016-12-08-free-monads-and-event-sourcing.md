@@ -153,7 +153,7 @@ Here `publishEvent` does whatever we need it to do, writes it to a log in NoSQL 
 
 What makes it work so well is: 
 
-* The instructions are operations in `ShipOp` are the very events we need to capture, and they are already nicely formatted in data classes (specifically case classes in Scala) for serialisation.
+* The instructions or operations in `ShipOp` are the very events we need to capture, and they are already nicely organised and available in data classes (specifically case classes in Scala) for serialisation.
 * The program has no need to even know that it is generating events for event sourcing capture. This is quite different from the imperative/OO case where there is quite a lot of ceremony `EventProcessor` code in the main program body.
 * Even the interpreter doesn't need to know about event sourcing taking place. It just receives the event/instruction after its been logged, and processes it as normal.
 
