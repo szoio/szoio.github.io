@@ -23,11 +23,11 @@ projection or snapshot in time of this cumulative history.
 There are numerous benefits to event sourcing, including but not limited to:
 1. *Audit trail* - having a complete sequence of timestamped events enables you to rewind your database state to any point in time.
 2. *Robustness* - if there's any failure in the database, or data is not committed or otherwise lost, you can fall back on the event log and try again, or restore from there.
-3. *Migrations* - data migrations can sometimes be very difficult, especially if it involves moving to an entirely different data model. Event sourcing simplifies this and diminishes the risk. The new database is just inflated by applying the events to the new data model or database instance. And it can be done in real time with no downtime. 
+3. *Migrations* - data migrations can sometimes be very difficult, especially if it involves moving to an entirely different data model, and you need to keep the system running. Event sourcing simplifies this and dramatically diminishes the risk. The new database is just inflated by applying the events to the new data model or database instance. And it can be done in real time with no downtime, as you can carry on streaming the old events into the new data instance continuously, until you flick the switch over. 
 
 Free monads and event sourcing are an excellent match. So much so, that after understanding the benefits of free monads, and following some of them to their natural conclusion, you'd end up inventing event sourcing if it didn't exist already.
 
-A term that if often associated with event sourcing is CQRS (Command query responsibility segregation). That's a complicated way of saying separating commands (create, update and delete operations) from queries (read operations). This concept is important and 
+A term that if often associated with event sourcing is *CQRS* (Command query responsibility segregation). That's a complicated way of saying separating commands (create, update and delete operations) from queries (read operations). This concept is important and necessary for event sourcing to work. The implications of this are described in detail below.
 
 Free monads enable you to simplify your thinking about a programming task. When creating a system, you consider the domain you are trying to model, and you come up with an instruction set to model that domain. In functional programming speak, that is often referred to as an algebra, I suppose for the closure reason given above. I'm going to take the liberty of borrowing [Martin Fowler's example](http://martinfowler.com/eaaDev/EventSourcing.html) for two reasons:
 1. It saves me having to concoct an example
