@@ -5,15 +5,15 @@ title: Free Monads and Event Sourcing Architecture
 date: 2016-12-08
 ---
 
-Since delving into free monads over the last 6 months, they have become ubiquitous in our code base. Free monads is a functional programming pattern which you describe the instructions that a program in a way that is completely separated from the execution of these instructions. 
+Since delving into free monads in recent times, they have become ubiquitous in our code base. It is a functional programming pattern in which you describe the instructions that a program in a way that is completely separated from the execution of these instructions. 
 
 But hang on, doesn't that sound like an interface in object oriented programming? Yes, there are similarities. But they are differences some pretty major differences, such as:
 
-1. Free monads are closed under monadic operations, in the mathematical sense. Just like a vector space is closed under linear operations. This means that any set of monadic operations, such as maps, flatmaps as well as extension such as traverses can be performed on a free monad, and it still a free monad - it retains its essential nature. Monadic operations are by no means all-encompassing, but are often rich and expressive enough to capture a wide range of applications within the intended domain. So the program itself is also a free monad, in a way that will be illustrated below. You certainly can't say anything like that about interfaces in OO! 
+1. Free monads are closed under monadic operations, in the mathematical sense. Just like a vector space is closed under linear operations. This means that any set of monadic operations, such as maps, flatmaps as well as extension such as traverses can be performed on a free monad, and it still a free monad - it retains its essential nature. Monadic operations are by no means all-encompassing, but are often rich and expressive enough to capture a wide range of applications within the intended domain. So you can create an entire program that itself is also a free monad of teh same type, in a way that will be illustrated below. You certainly can't say anything like that about interfaces in OO! 
 
 2. Free monads are data. They are sometimes referred to as a *"program that describes a program"*, but the actually *"a data structure that represents a program that describes a program"*. 
 
-Free monads are a quite a difficult concept to get your head around, but they are easy to work with. This blog is not intended as a comprehensive description or tutorial on free monads. There are quite a few resources for that:- here is quite a nice free reading introduction:
+Free monads are a somewhat difficult concept to get your head around, but they end up being simple to work with. This blog is not intended as a comprehensive description or tutorial on free monads. There are quite a few resources for that:- here is quite a nice free reading introduction:
 http://perevillega.com/understanding-free-monads
 There's also many excellent talks available online, and of course [Red functional programming book](https://www.manning.com/books/functional-programming-in-scala) is a classic and always to be recommended, and describes the pattern from first principles.
 
