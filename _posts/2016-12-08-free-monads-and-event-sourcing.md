@@ -72,6 +72,7 @@ Free monads have the type signature `Free[F[_], A]`, where `F` is the "instructi
 ```scala
 type ShipFree[A] = Free[ShipOp, A]
 ```
+
 and this `ShipFree` is a monad. `Free[F[_], A]` is available in functional programming libraries like scalaz and cats (which is what we are tending to use).
 
 We then create a *program* that comprises instructions from the algebra:
@@ -116,9 +117,11 @@ object ShipOpToConnectionIO extends (ShipOp ~> ConnectionIO) {
 ```
 
 Then running our program is simple. We just `foldMap` and pass in our interpreter to create a `ConnectionIO` for the entire sequence of database queries:
+
 ```scala
 val locationIO = program.foldMap(ShipOpToConnectionIO)
 ```
+
 and then let doobie do it's thing (well explained in the [book of doobie](http://tpolecat.github.io/doobie-0.3.0/00-index.html)):
 
 ```scala
@@ -131,6 +134,7 @@ Note that the program is pure functional code. Any side effects are relegated to
 ### Adding event sourcing
 
 At this point the potential for adding event sourcing may start to become apparent. We just create an wrapper interpreter to capture the events before handing them on to the real interpreter.
+
 ```scala
 final case class EventCapture[F[_], G[_]](interpreter: F ~> G) extends (F ~> G) {
   override def apply[A](fa: F[A]): G[A] = {
@@ -140,9 +144,11 @@ final case class EventCapture[F[_], G[_]](interpreter: F ~> G) extends (F ~> G) 
 }
 ```
 and then we swap in this new interpreter:
+
 ```scala
 val locationIO = program.foldMap(EventCapture(ShipOpToConnectionIO))
 ```
+
 Here `publishEvent` does whatever we need it to do, writes it to a log in NoSQL database, publishes it to a Kafka queue, or whatever.
 
 What makes it work so well is: 
@@ -175,7 +181,8 @@ object ShipOp {
   ...
 }
 ```
-and our program became:
+and our program becames:
+
 ```scala
 val program: ShipFree[_] = for {
   ...   
@@ -183,6 +190,7 @@ val program: ShipFree[_] = for {
   _       <- Departure(krCode, PortCode.sf).freeM
   ...
 ```
+
 In this case we rely on the database to generate a code or ID for the ship. It's immediately clear that this won't work for event sourcing. When we replay our event stream, the `AddShip` instruction will potentially return a new code/ID, and that will invalidate the `Departure` event that follows. It's also clear that this `AddShip` instruction violates *CQRS* - it involves a state mutation (inserting), which makes it a command, but it also returns an ID for later consumption, that makes it a query as well.
 
 There are potential mechanisms that could be constructed to manage this, but they are far more complex than designing the algebra to avoid this in the first places. It also means that all record IDs that we may need to reference must be either:
@@ -275,6 +283,7 @@ object ShipQueryOpToConnectionIO extends (ShipQueryOp ~> ConnectionIO) {
   }  
 }
 ```
+
 and we only wrap the `ShipCommandOpToConnectionIO` interpreter with our original `EventCapture` interpreter.
 
 So we have achieved perfect *CQRS*. But does this mean that we can't include commands and queries in the same program. Fortunately not. We then create the `Coproduct` algebra of the command and query algebras:
