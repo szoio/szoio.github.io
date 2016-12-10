@@ -160,7 +160,7 @@ What makes it work so well is:
 Key to success is accurate replay of events. Ideally we want to write as little additional code as possible, and reuse whatever possible from the mechanism that was used to generate the events in the first place. The solution is beautifully simple - we take the stream of events, played from the beginning, or whatever the starting point is, and we transform this into a `ShipFree` instance, and then run this as we did with our original program. We could do this as follows:
 
 ```scala
-val eventList = eventSteam.toList
+val eventList     = eventSteam.toList
 val replayProgram = eventList.traverse[ShipFree, Unit](_.freeM.map(_ => ()))
 ```
 
@@ -170,7 +170,7 @@ Then we run `replayProgram` exactly as before. It may not be exactly like this, 
 
 ### Designing event sourceable algebras
 
-There are some issues regarding the design of algebras that we have not addressed. There are certain restrictions on the algebras themselves required to make them event sourceable. These specifically relate the the *CQRS* requirement - separating commands from queries. The most important of these is that all event details for the events we are capturing need to be exogenously speficied. This immediately rules out database generated record IDs.
+There are some issues regarding the design of algebras still to deal with. There are restrictions on the algebras themselves required to make them event sourceable. These specifically relate the the *CQRS* requirement - separating commands from queries. The most important of these is that all event details for the events we are capturing need to be exogenously speficied. This immediately rules out database generated record IDs.
 
 For example if we modified our algebra as follows:
 
@@ -316,7 +316,7 @@ Slightly more busy, but still perfectly manageable and elegant enough. So where 
 ```scala
 import cats.free.{Free, Inject}
 
-trait FreeAlgebra[F[_], A] { this: F[A] =>
+trait FreeOp[F[_], A] { this: F[A] =>
   def freeM: Free[F, A]                                  = cats.free.Free.liftF(this)
   def freeMC[G[_]](implicit I: Inject[F, G]): Free[G, A] = Free.inject(this)
 }
@@ -325,8 +325,8 @@ trait FreeAlgebra[F[_], A] { this: F[A] =>
 Then we just need to inherit from this base class to get these methods. Our algebras becomes:
 
 ```scala
-sealed trait ShipCommandOp[A] extends FreeAlgebra[A]
-sealed trait ShipQueryOp[A]   extends FreeAlgebra[A]
+sealed trait ShipCommandOp[A] extends FreeOp[ShipCommandOp, A]
+sealed trait ShipQueryOp[A]   extends FreeOp[ShipQueryOp, A]
 
 type ShipOp[A] = Coproduct[ShipCommandOp, ShipQueryOp, A]  
 ```
