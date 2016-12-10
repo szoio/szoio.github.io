@@ -21,6 +21,7 @@ Instead, the aim of this post is to relate free monads to [*event sourcing*](htt
 projection or snapshot in time of this cumulative history.
 
 There are numerous benefits to event sourcing, including but not limited to:
+
 1. *Audit trail* - having a complete sequence of timestamped events enables you to rewind your database state to any point in time.
 2. *Robustness* - if there's any failure in the database, or data is not committed or otherwise lost, you can fall back on the event log and try again, or restore from there.
 3. *Migrations* - data migrations can sometimes be very difficult, especially if it involves moving to an entirely different data model, and you need to keep the system running. Event sourcing simplifies this and dramatically diminishes the risk. The new database is just inflated by applying the events to the new data model or database instance. And it can be done in real time with no downtime, as you can carry on streaming the old events into the new data instance continuously, until you flick the switch over. 
@@ -30,8 +31,10 @@ Free monads and event sourcing are an excellent match. So much so, that after un
 A term that if often associated with event sourcing is *CQRS* (Command query responsibility segregation). That's a complicated way of saying separating commands (create, update and delete operations) from queries (read operations). This concept is important and necessary for event sourcing to work. The implications of this are described in detail below.
 
 Free monads enable you to simplify your thinking about a programming task. When creating a system, you consider the domain you are trying to model, and you come up with an instruction set to model that domain. In functional programming speak, that is often referred to as an algebra, I suppose for the closure reason given above. I'm going to take the liberty of borrowing [Martin Fowler's example](http://martinfowler.com/eaaDev/EventSourcing.html) for two reasons:
+
 1. It saves me having to concoct an example
 2. It gives a like-for-like basis to compare Free monad event sourcing with a conventional OO example.
+
 I hope he doesn't mind!
 
 Accordingly, we could create a simple language or algebra from the following events:
@@ -143,6 +146,7 @@ val locationIO = program.foldMap(EventCapture(ShipOpToConnectionIO))
 Here `publishEvent` does whatever we need it to do, writes it to a log in NoSQL database, publishes it to a Kafka queue, or whatever.
 
 What makes it work so well is: 
+
 * The instructions are operations in `ShipOp` are the very events we need to capture, and they are already nicely formatted in data (case) classes for serialisation.
 * The program has no need to even know that it is generating events for event sourcing capture. This is quite different from the imperative/OO case where there is quite a lot of ceremony `EventProcessor` code in the main program body.
 * Even the interpreter doesn't need to know about event sourcing taking place. It just receives the event/instruction after its been logged, and processes it as normal.
@@ -182,6 +186,7 @@ val program: ShipFree[_] = for {
 In this case we rely on the database to generate a code or ID for the ship. It's immediately clear that this won't work for event sourcing. When we replay our event stream, the `AddShip` instruction will potentially return a new code/ID, and that will invalidate the `Departure` event that follows. It's also clear that this `AddShip` instruction violates *CQRS* - it involves a state mutation (inserting), which makes it a command, but it also returns an ID for later consumption, that makes it a query as well.
 
 There are potential mechanisms that could be constructed to manage this, but they are far more complex than designing the algebra to avoid this in the first places. It also means that all record IDs that we may need to reference must be either:
+
 * IDs that are sourced externally, that we know are not going to change, or may change in a way that can be managed. For example we don't expect stock ticker symbols to change too often, though they are known to change with certain corporate actions.
 * Randomly generated IDs - typically `UUID`s - that have a negligible collision probability. 
 
@@ -189,6 +194,7 @@ Some database implementations we may use don't support creating records with an 
 This may add some small performance overhead, but the benefits in most cases of an event sourcing archtecture will far outweigh this.
 
 As a consequence of this segregation of commands and queries, you may note that all the commands in our algebra have uninteresting return types. These would typically be:
+
 * `Unit` - no return status.
 * `Boolean` - denoting success or failure.
 * `Int` - denoting how many records were affected, if the operation may affect several records.
