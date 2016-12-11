@@ -314,7 +314,7 @@ val program: ShipFree[_] = for {
 } yield location
 ```
 
-Slightly more busy, but still perfectly manageable and elegant enough. So where do these `.freeM` and `.freeMC` come from? Well, to make things nice and easy, here's a simple helper trait that provides these, that can be used for any free monad algebra.
+Slightly more busy, but still perfectly manageable and elegant enough. So where do these `.freeM` and `.freeMC` come from? Well, to make things nice and easy, here's a simple helper trait that provides these. It can be used for any free monad algebra.
 
 ```scala
 import cats.free.{Free, Inject}
