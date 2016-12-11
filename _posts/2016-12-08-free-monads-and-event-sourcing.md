@@ -5,7 +5,7 @@ title: Free Monads and Event Sourcing Architecture
 date: 2016-12-08
 ---
 
-In this post we look at the free monads, and how they are ideally suited to implementing an event sourcing data architecture. We discuss some of the restrictions on a free monad API that are required for event sourcing to work optimally, and review some of the related best practices.
+In this post we look at free monads, and how they are ideally suited to implementing an event sourcing data architecture. We discuss some of the restrictions on a free monad API that are required for event sourcing to work optimally, and review some of the related best practices.
 
 Since delving into free monads in recent times, they have become an ubiquitous pattern in our code base. It is a functional programming technique in which you describe the instructions that a program in a way that is completely separated from the execution of these instructions. 
 
