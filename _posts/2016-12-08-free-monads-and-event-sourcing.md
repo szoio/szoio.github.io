@@ -5,7 +5,7 @@ title: Free Monads and Event Sourcing Architecture
 date: 2016-12-08
 ---
 
-In this post we look at free monads, and how they are ideally suited to implementing an event sourcing data architecture. We discuss some of the restrictions on a free monad API that are required for event sourcing to work optimally, and review some of the related best practices.
+In this post we look at free monads, a widely applicable functional programming technique that is rapidly gaining traction amongst Scala developers, and how they are ideally suited to implementing an event sourcing data architecture. We discuss some of the restrictions on a free monad API that are required for event sourcing to work optimally, and review some related best practices.
 
 Since delving into free monads in recent times, they have become an ubiquitous pattern in our code base. It is a functional programming technique in which you describe the instructions that a program in a way that is completely separated from the execution of these instructions. 
 
@@ -15,8 +15,7 @@ But hang on, doesn't that sound like an interface in object oriented programming
 
 2. Free monads are data. They are sometimes referred to as a *"program that describes a program"*, but the actually *"a data structure that represents a program that describes a program"*. 
 
-Free monads are a somewhat difficult concept to get your head around, but they end up being simple to work with. This blog is not intended as a comprehensive description or tutorial on free monads. There are quite a few resources for that:- here is quite a nice free reading introduction:
-http://perevillega.com/understanding-free-monads
+Free monads are a somewhat difficult concept to get your head around, but they end up being simple to work with. This blog is not intended as a comprehensive description or tutorial on free monads. There are quite a few resources for that:- here is quite a nice free reading introduction: [http://perevillega.com/understanding-free-monads](http://perevillega.com/understanding-free-monads).
 There's also many excellent talks available online, and of course [Red functional programming book](https://www.manning.com/books/functional-programming-in-scala) is a classic and always to be recommended, and describes the pattern from first principles.
 
 Instead, the aim of this post is to relate free monads to [*event sourcing*](http://martinfowler.com/eaaDev/EventSourcing.html), another well known and very worthwhile pattern. The principle of event sourcing relates to data storage and management. It suggests a different way of thinking about your data in which the current database state is not the fundamental source of truth, but the ordered sequence of events that were used to get it into this state. Databases are generally mutable, and their state is modified by create, update and delete operations (everything but the read in the so called CRUD operations). This sequence of events that describe these mutations are themselves immutable, and together constitute an append-only event log. 
