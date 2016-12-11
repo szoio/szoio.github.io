@@ -74,7 +74,7 @@ Free monads have the type signature `Free[F[_], A]`, where `F` is the "instructi
 type ShipFree[A] = Free[ShipOp, A]
 ```
 
-and this `ShipFree` is a monad. `Free[F[_], A]` is available in functional programming libraries like scalaz and cats (which is what we are tending to use).
+and this `ShipFree` is a monad. `Free[F[_], A]` is available in functional programming libraries like [scalaz](https://github.com/scalaz/scalaz) and [cats](http://typelevel.org/cats/) (which is what we are tending to use).
 
 We then create a *program* that comprises instructions from the algebra:
 
@@ -314,7 +314,7 @@ val program: ShipFree[_] = for {
 } yield location
 ```
 
-Slightly more busy, but still perfectly manageable and elegant enough. So where do these `.freeM` and `.freeMC` come from? Well, to make things nice and easy, here's a simple helper trait that provides some useful boilerplate, but it's essentially the same stuff that's described in more detail by [Pere Villega](http://perevillega.com/understanding-free-monads), but with some of the boilerplate out the way.
+Slightly more busy, but still perfectly manageable and elegant enough. So where do these `.freeM` and `.freeMC` come from? Well, to make things nice and easy, here's a simple helper trait that provides these, that can be used for any free monad algebra.
 
 ```scala
 import cats.free.{Free, Inject}
@@ -325,7 +325,7 @@ trait FreeOp[F[_], A] { this: F[A] =>
 }
 ```
 
-Here we use the `Free` object of the `cats` library, which also provides the `liftF` and `inject` methods that lift the operation into its free monad and the coproduct free monad respectively. It also provides the necessary instance of the `Inject` type class needed for the coproduct.
+Here we use the `Free` object of the [cats library](http://typelevel.org/cats/), which also provides the `liftF` and `inject` methods that lift the operation into its free monad and the coproduct free monad respectively. It also provides the necessary instance of the `Inject` type class needed for the coproduct.
 
 We just need to inherit from this base class to get these methods. Our algebras becomes:
 
