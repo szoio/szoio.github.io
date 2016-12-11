@@ -159,14 +159,14 @@ What makes it work so well is:
 * The program has no need to even know that it is generating events for event sourcing capture. This is quite different from the imperative/OO case where there is quite a lot of ceremony `EventProcessor` code in the main program body.
 * Even the interpreter doesn't need to know about event sourcing taking place. It just receives the event/instruction after its been logged, and processes it as normal.
 
-Key to success is accurate replay of events. Ideally we want to write as little additional code as possible, and reuse whatever possible from the mechanism that was used to generate the events in the first place. The solution is beautifully simple - we take the stream of events, played from the beginning, or whatever the starting point is, and we transform this into a `ShipFree` instance, and then run this as we did with our original program. We could do this as follows:
+Key to success is accurate replay of events. Ideally we want to write as little additional code as possible, and reuse whatever possible from the mechanism that was used to generate the events in the first place. The solution is beautifully simple - we take the stream of events, played from the beginning, or whatever the starting point is, and we transform this into a `ShipFree` instance, and then run this as we did with our original program. We could do this in a couple lines of code as follows:
 
 ```scala
 val eventList     = eventSteam.toList
 val replayProgram = eventList.traverse[ShipFree, Unit](_.freeM.map(_ => ()))
 ```
 
-Then we run `replayProgram` exactly as before. It may not be exactly like this, we may split the replay operation into batches, but this is how it works in principle.
+Then we run `replayProgram` exactly as before. It may work slightly differently in production code; e.g. we may split the replay operation into batches, but it would work this way in principle.
 
 ![Event sourcing capture and replay]({{ site.baseurl }}/images/execution-and-playback-event-sourcing.png)  
 
