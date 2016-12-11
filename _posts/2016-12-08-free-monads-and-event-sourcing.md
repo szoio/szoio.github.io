@@ -344,4 +344,6 @@ val ShipOpToConnectionIO = LoggingInterp(ShipCommandOpToConnectionIO) or ShipQue
 ```
 and we run our program with `program.foldMap(ShipOpToConnectionIO)` exactly as before. Note that we only wrap the command interpreter with the event capture wrapper.
 
+With this architecture, we have decoupled commands from queries completely. Certain use cases, such as event playback, don't need to know about the queries at all, neither the algebra nor the interpreter. Other use cases, such as a web API, may need to know about both, and for this, we can easily form the coproduct.
+
 Well that's it for now - there's of course more that can be said on the topic, but if this inpires someone to use free monads to implement event sourcing, or if you're already using free monads and decide to take advantage of the (almost) free event sourcing it enables, I'd be really happy. It's really marvellous stuff, not hard to get enthusiastic about!
