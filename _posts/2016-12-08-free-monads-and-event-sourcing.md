@@ -26,6 +26,7 @@ There are numerous benefits to event sourcing, including but certainly not limit
 1. *Audit trail* - having a complete sequence of timestamped events enables you to rewind your database state to any point in time.
 2. *Robustness* - if there's any failure in the database, or data is not committed or otherwise lost, you can fall back on the event log and try again, or restore from there.
 3. *Migrations* - data migrations can sometimes be very difficult, especially if it involves moving to an entirely different data model, and you need to keep the system running. Event sourcing simplifies this and dramatically diminishes the risk. The new database is just inflated by applying the events to the new data model or database instance. And it can be done in real time with no downtime, as you can carry on streaming the old events into the new data instance continuously, until you flick the switch over. 
+4. *Data feeds* - event sourcing is perfect for incremental data feeds, as we can . 
 
 Free monads and event sourcing are an excellent match. So much so, that after understanding the benefits of free monads, and following some of them to their natural conclusion, you could end up inventing event sourcing if it didn't exist already.
 
@@ -102,7 +103,7 @@ It is common to have more than one layer of interpreters, where layers represent
 So our interpreter may look like this:
 
 ```scala
-object ShipOpToConnectionIO extends (ShipOp ~> ConnectionIO) {
+object ShipOp2ConIO extends (ShipOp ~> ConnectionIO) {
 
   override def apply[A](fa: ShipOp[A]): ConnectionIO[A] = fa match {
     // commands
@@ -120,7 +121,7 @@ object ShipOpToConnectionIO extends (ShipOp ~> ConnectionIO) {
 Then running our program is simple. We just `foldMap` and pass in our interpreter to create a `ConnectionIO` for the entire sequence of database queries:
 
 ```scala
-val locationIO = program.foldMap(ShipOpToConnectionIO)
+val locationIO = program.foldMap(ShipOp2ConIO)
 ```
 
 and then let doobie do it's thing (well explained in the [book of doobie](http://tpolecat.github.io/doobie-0.3.0/00-index.html)):
@@ -147,7 +148,7 @@ final case class EventCapture[F[_], G[_]](interpreter: F ~> G) extends (F ~> G) 
 and then we swap in this new interpreter:
 
 ```scala
-val locationIO = program.foldMap(EventCapture(ShipOpToConnectionIO))
+val locationIO = program.foldMap(EventCapture(ShipOp2ConIO))
 ```
 
 Here `publishEvent` does whatever we need it to do, writes it to a log in NoSQL database, publishes it to a Kafka queue, or whatever.
@@ -272,14 +273,14 @@ object ShipQueryOp {
 Then we create a separate interpreters for these algebras:
 
 ```scala
-object ShipCommandOpToConnectionIO extends (ShipCommandOp ~> ConnectionIO) {
+object ShipCommandOp2ConIO extends (ShipCommandOp ~> ConnectionIO) {
 
   override def apply[A](fa: ShipCommandOp[A]): ConnectionIO[A] = fa match {
     case ... // only handle the commands
   }  
 }
 
-object ShipQueryOpToConnectionIO extends (ShipQueryOp ~> ConnectionIO) {
+object ShipQueryOp2ConIO extends (ShipQueryOp ~> ConnectionIO) {
 
   override def apply[A](fa: ShipQueryOp[A]): ConnectionIO[A] = fa match {
     case ... // only handle the queries
@@ -287,7 +288,7 @@ object ShipQueryOpToConnectionIO extends (ShipQueryOp ~> ConnectionIO) {
 }
 ```
 
-and we only wrap the `ShipCommandOpToConnectionIO` interpreter with our original `EventCapture` interpreter.
+and we only wrap the `ShipCommandOp2ConIO` interpreter with our original `EventCapture` interpreter.
 
 So we have achieved perfect *CQRS*. But does this mean that we can't include commands and queries in the same program. Fortunately not. We then create the `Coproduct` algebra of the command and query algebras:
 
@@ -340,9 +341,9 @@ We probably could have done the same thing with an implicit class, but this work
 Finally we need an interpreter that can interpret both command and query instructions in the coproduct `ShipOp` instruction set. Fortunately this is really easy with the `or` method of the natural transformation `~>[F[_], G[_]]` type class, and we end up with:
 
 ```scala
-val ShipOpToConnectionIO = LoggingInterp(ShipCommandOpToConnectionIO) or ShipQueryOpToConnectionIO
+val ShipOp2ConIO = LoggingInterp(ShipCommandOp2ConIO) or ShipQueryOp2ConIO
 ```
-and we run our program with `program.foldMap(ShipOpToConnectionIO)` exactly as before. Note that we only wrap the command interpreter with the event capture wrapper.
+and we run our program with `program.foldMap(ShipOp2ConIO)` exactly as before. Note that we only wrap the command interpreter with the event capture wrapper.
 
 With this architecture, we have decoupled commands from queries completely. Certain use cases, such as event playback, don't need to know about the queries at all, neither the algebra nor the interpreter. Other use cases, such as a web API, may need to know about both, and for this, we can easily form the coproduct and use them simultaneously.
 
