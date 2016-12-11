@@ -344,7 +344,4 @@ val ShipOpToConnectionIO = LoggingInterp(ShipCommandOpToConnectionIO) or ShipQue
 ```
 and we run our program with `program.foldMap(ShipOpToConnectionIO)` exactly as before. Note that we only wrap the command interpreter with the event capture wrapper.
 
-It's really marvellous stuff, isn't it?
-
-
-
+Well that's it for now - there's of course more that can be said on the topic, but if this inpires someone to use free monads to implement event sourcing, or if you're already using free monads and decide to take advantage of the (almost) free event sourcing it enables, I'd be really happy. It's really marvellous stuff, not hard to get enthusiastic about!
