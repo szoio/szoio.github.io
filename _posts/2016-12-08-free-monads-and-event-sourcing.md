@@ -325,7 +325,7 @@ trait FreeOp[F[_], A] { this: F[A] =>
 }
 ```
 
-Here we use the `Free` object of the `cats` library, which also provides the `liftF and `inject` methods that "lift" the operation into its free monad and the free monad of the coproduct. It also provides the necessary instance for the `Inject` type class.
+Here we use the `Free` object of the `cats` library, which also provides the `liftF` and `inject` methods that lift the operation into its free monad and the coproduct free monad respectively. It also provides the necessary instance of the `Inject` type class needed for the coproduct.
 
 We just need to inherit from this base class to get these methods. Our algebras becomes:
 
