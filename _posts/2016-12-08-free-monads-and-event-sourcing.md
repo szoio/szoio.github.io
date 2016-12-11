@@ -1,6 +1,6 @@
 ---
 layout: post
-slug: free-monads-and-event-sourcing.md
+slug: free-monads-and-event-sourcing
 title: Free Monads and Event Sourcing Architecture
 date: 2016-12-08
 ---
