@@ -26,7 +26,8 @@ There are numerous benefits to event sourcing, including but certainly not limit
 1. *Audit trail* - having a complete sequence of timestamped events enables you to rewind your database state to any point in time.
 2. *Robustness* - if there's any failure in the database, or data is not committed or otherwise lost, you can fall back on the event log and try again, or restore from there.
 3. *Migrations* - data migrations can sometimes be very difficult, especially if it involves moving to an entirely different data model, and you need to keep the system running. Event sourcing simplifies this and dramatically diminishes the risk. The new database is just inflated by applying the events to the new data model or database instance. And it can be done in real time with no downtime, as you can carry on streaming the old events into the new data instance continuously, until you flick the switch over. 
-4. *Data feeds* - event sourcing is perfect for incremental data feeds, as we can . 
+
+Event sourcing is a good fit for a microservices architecture, and creates options for how we decompose our system. For example if we have a module that indexes to elasticsearch, it could be set up as a separate module that subscribes to the event log. When we start to think about our system that way, the event log assumes central importance within our overall architecture.
 
 Free monads and event sourcing are an excellent match. So much so, that after understanding the benefits of free monads, and following some of them to their natural conclusion, you could end up inventing event sourcing if it didn't exist already.
 
