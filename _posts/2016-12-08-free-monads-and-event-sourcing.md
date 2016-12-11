@@ -290,7 +290,7 @@ object ShipQueryOp2ConIO extends (ShipQueryOp ~> ConnectionIO) {
 
 and we only wrap the `ShipCommandOp2ConIO` interpreter with our original `EventCapture` interpreter.
 
-So we have achieved perfect *CQRS*. But does this mean that we can't include commands and queries in the same program. Fortunately not. We then create the `Coproduct` algebra of the command and query algebras:
+So we have achieved full *CQRS*. But does this mean that we can't include commands and queries in the same program? Fortunately it doesn't. We can create the "[*coproduct*](http://eed3si9n.com/learning-scalaz/Coproducts.html)" algebra of the command and query algebras:
 
 ```scala
 import cats.data.Coproduct
