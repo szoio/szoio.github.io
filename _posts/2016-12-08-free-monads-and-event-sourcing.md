@@ -5,11 +5,13 @@ title: Free Monads and Event Sourcing Architecture
 date: 2016-12-08
 ---
 
-Since delving into free monads in recent times, they have become ubiquitous in our code base. It is a functional programming pattern in which you describe the instructions that a program in a way that is completely separated from the execution of these instructions. 
+In this post we look at the free monads, and how they are ideally suited to implementing an event sourcing data architecture. We discuss some of the restrictions on a free monad API that are required for event sourcing to work optimally, and review some of the related best practices.
+
+Since delving into free monads in recent times, they have become an ubiquitous pattern in our code base. It is a functional programming technique in which you describe the instructions that a program in a way that is completely separated from the execution of these instructions. 
 
 But hang on, doesn't that sound like an interface in object oriented programming? Yes, there are similarities. But they are differences some pretty major differences, such as:
 
-1. Free monads are closed under monadic operations, in the mathematical sense. Just like a vector space is closed under linear operations. This means that any set of monadic operations, such as maps, flatmaps as well as extension such as traverses can be performed on a free monad, and it still a free monad - it retains its essential nature. Monadic operations are by no means all-encompassing, but are often rich and expressive enough to capture a wide range of applications within the intended domain. So you can create an entire program that itself is also a free monad of the same type, in a way that will be illustrated below. You certainly can't say anything like that about interfaces in OO! 
+1. Free monads are closed under monadic operations, in the mathematical sense. Just like a vector space is closed under linear operations. This means that any set of monadic operations, such as maps, flatmaps as well as extension such as traverses can be performed on a free monad, and it still a free monad - it retains its essential nature. Monadic operations are by no means all-encompassing, but are often rich and expressive enough to represent a wide range of common use cases, and in particular capture the notion of sequential computation. So you can create an entire program that itself is also a free monad of the same type, without stepping out of the monad, in a way that will be illustrated below. You certainly can't say anything like that about interfaces in OO! 
 
 2. Free monads are data. They are sometimes referred to as a *"program that describes a program"*, but the actually *"a data structure that represents a program that describes a program"*. 
 
@@ -17,18 +19,18 @@ Free monads are a somewhat difficult concept to get your head around, but they e
 http://perevillega.com/understanding-free-monads
 There's also many excellent talks available online, and of course [Red functional programming book](https://www.manning.com/books/functional-programming-in-scala) is a classic and always to be recommended, and describes the pattern from first principles.
 
-Instead, the aim of this post is to relate free monads to [*event sourcing*](http://martinfowler.com/eaaDev/EventSourcing.html), another well known and very worthwhile pattern. The principle of event sourcing relates to data storage and management. It suggests a different way of thinking about your data in which the current database state is not the fundamental source of truth, but the ordered sequence of events that were used to get it into this state. Databases are generally mutable, and their state is modified by create, update and delete operations (everything but the read in the so called CRUD operations). This sequence of events that describe these mutations are themselves immutable, and together constitute an append-only event log. Event sourcing is treating this event log as the source of truth, and the database as a derived
-projection or snapshot in time of this cumulative history.
+Instead, the aim of this post is to relate free monads to [*event sourcing*](http://martinfowler.com/eaaDev/EventSourcing.html), another well known and very worthwhile pattern. The principle of event sourcing relates to data storage and management. It suggests a different way of thinking about your data in which the current database state is not the fundamental source of truth, but the ordered sequence of events that were used to get it into this state. Databases are generally mutable, and their state is modified by create, update and delete operations (everything but the read in the so called CRUD operations). This sequence of events that describe these mutations are themselves immutable, and together constitute an append-only event log. 
+Event sourcing is treating this event log as the source of truth, and the database as a derived projection or snapshot in time of this cumulative history.
 
-There are numerous benefits to event sourcing, including but not limited to:
+There are numerous benefits to event sourcing, including but certainly not limited to:
 
 1. *Audit trail* - having a complete sequence of timestamped events enables you to rewind your database state to any point in time.
 2. *Robustness* - if there's any failure in the database, or data is not committed or otherwise lost, you can fall back on the event log and try again, or restore from there.
 3. *Migrations* - data migrations can sometimes be very difficult, especially if it involves moving to an entirely different data model, and you need to keep the system running. Event sourcing simplifies this and dramatically diminishes the risk. The new database is just inflated by applying the events to the new data model or database instance. And it can be done in real time with no downtime, as you can carry on streaming the old events into the new data instance continuously, until you flick the switch over. 
 
-Free monads and event sourcing are an excellent match. So much so, that after understanding the benefits of free monads, and following some of them to their natural conclusion, you'd end up inventing event sourcing if it didn't exist already.
+Free monads and event sourcing are an excellent match. So much so, that after understanding the benefits of free monads, and following some of them to their natural conclusion, you could end up inventing event sourcing if it didn't exist already.
 
-A term that if often associated with event sourcing is *CQRS* (Command query responsibility segregation). That's a complicated way of saying separating commands (create, update and delete operations) from queries (read operations). This concept is important and necessary for event sourcing to work. The implications of this are described in detail below.
+A term that if often associated with event sourcing is *CQRS* (Command query responsibility segregation). That's a complicated way of saying separating commands (create, update and delete operations) from queries (read operations). This concept is paramount for event sourcing to work. The implications of this are described in detail below.
 
 Free monads enable you to simplify your thinking about a programming task. When creating a system, you consider the domain you are trying to model, and you come up with an instruction set to model that domain. In functional programming speak, that is often referred to as an algebra, I suppose for the closure reason given above. I'm going to take the liberty of borrowing [Martin Fowler's example](http://martinfowler.com/eaaDev/EventSourcing.html) for two reasons:
 
@@ -96,7 +98,7 @@ Coming back the the vector space analogy, we can think of the `ShipOp` instructi
 
 And finally, we need to create an *interpreter*, which is a natural transformation from the free monad to a monad type that handles the evaluation, like a scala `Future` or a scalaz or cats `Task`. Please consult the links above for more elaborate explanation.
 
-It is common to have more than one layer of interpreters. For example, if you are using the [doobie framework for data access to SQL databases](https://github.com/tpolecat/doobie), as we do, the interpreter may be a natural transformation `ShipOp ~> ConnectionIO`, and then a second interpreter layer, with transaction support, is provided by the doobie library.
+It is common to have more than one layer of interpreters, where layers represent different levels of abstraction within the system. For example, if you are using the [doobie framework](https://github.com/tpolecat/doobie) for data access to SQL databases, as we do, the interpreter may be a natural transformation `ShipOp ~> ConnectionIO`, and then a second interpreter layer, with transaction support, is provided by the doobie library. `ConnectionIO` is itself a free monad over the JDBC database operations.
 
 So our interpreter may look like this:
 
@@ -191,9 +193,11 @@ val program: ShipFree[_] = for {
   ...
 ```
 
-In this case we rely on the database to generate a code or ID for the ship. It's immediately clear that this won't work for event sourcing. When we replay our event stream, the `AddShip` instruction will potentially return a new code/ID, and that will invalidate the `Departure` event that follows. It's also clear that this `AddShip` instruction violates *CQRS* - it involves a state mutation (inserting), which makes it a command, but it also returns an ID for later consumption, that makes it a query as well.
+In this case we rely on the database to generate a code or ID for the ship. It's immediately clear that this won't work for event sourcing. When we replay our event stream, the `AddShip` instruction will potentially return a new code/ID, and that will invalidate the `Departure` event that follows, as this event will be replayed with the old ID. 
 
-There are potential mechanisms that could be constructed to manage this, but they are far more complex than designing the algebra to avoid this in the first places. It also means that all record IDs that we may need to reference must be either:
+It's not a coincidence that the `AddShip` instruction violates *CQRS* - it involves a state mutation (inserting), which makes it a command, but it also returns an ID for later consumption, that makes it a query as well. 
+
+There are potential mechanisms that could be constructed to manage this, but they are far more complex than designing the algebra to avoid this scenario in the first places. It also means that all record IDs that we may need to reference must be either:
 
 * IDs that are sourced externally, that we know are not going to change, or may change in a way that can be managed. For example we don't expect stock ticker symbols to change too often, though they are known to change with certain corporate actions.
 * Randomly generated IDs - typically `UUID`s - that have a negligible collision probability. 
@@ -201,7 +205,7 @@ There are potential mechanisms that could be constructed to manage this, but the
 Some database implementations we may use don't support creating records with an externally specified ID. In these cases, we have no option but to involve a lookup table, but this needs to be an implementation detail opaque to the algebra / program.
 This may add some small performance overhead, but the benefits in most cases of an event sourcing archtecture will far outweigh this.
 
-As a consequence of this segregation of commands and queries, you may note that all the commands in our algebra have uninteresting return types. These would typically be:
+As a consequence of this segregation of commands and queries, you may note that all the commands in our algebra have uninteresting return types. These would typically be such as:
 
 * `Unit` - no return status.
 * `Boolean` - denoting success or failure.
@@ -317,12 +321,14 @@ Slightly more busy, but still perfectly manageable and elegant enough. So where 
 import cats.free.{Free, Inject}
 
 trait FreeOp[F[_], A] { this: F[A] =>
-  def freeM: Free[F, A]                                  = cats.free.Free.liftF(this)
+  def freeM: Free[F, A]                                  = Free.liftF(this)
   def freeMC[G[_]](implicit I: Inject[F, G]): Free[G, A] = Free.inject(this)
 }
 ```
 
-Then we just need to inherit from this base class to get these methods. Our algebras becomes:
+Here we use the `Free` object of the `cats` library, which also provides the `liftF and `inject` methods that "lift" the operation into its free monad and the free monad of the coproduct. It also provides the necessary instance for the `Inject` type class.
+
+We just need to inherit from this base class to get these methods. Our algebras becomes:
 
 ```scala
 sealed trait ShipCommandOp[A] extends FreeOp[ShipCommandOp, A]
@@ -339,7 +345,7 @@ val ShipOpToConnectionIO = LoggingInterp(ShipCommandOpToConnectionIO) or ShipQue
 ```
 and we run our program with `program.foldMap(ShipOpToConnectionIO)` exactly as before. Note that we only wrap the command interpreter with the event capture wrapper.
 
-It's really marvellous application of one of the most useful patterns of FP to one of the most beneficial mechanisms for data management.
+It's really marvellous stuff, isn't it?
 
 
 
