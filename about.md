@@ -4,7 +4,7 @@ title: About
 permalink: /about/
 ---
 
-I am a data scientist and software engineer based in Auckland, New Zealand. I work at [Spring](http://spring.nz/), a business development consultancy.
+I am a software and data engineer based in Auckland, New Zealand. I work at [Spring](http://spring.nz/), a business development consultancy.
 
 ### This Blog
 
