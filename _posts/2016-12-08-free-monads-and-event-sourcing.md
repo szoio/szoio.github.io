@@ -23,7 +23,7 @@ Event sourcing is treating this event log as the source of truth, and the databa
 
 There are numerous benefits to event sourcing, including but certainly not limited to:
 
-1. *Audit trail* - having a complete sequence of timestamped events enables you to rewind your database state to any point in time.
+1. *Audit trail* - having a complete sequence of timestamped events enables you to review previous transactions and rewind your database state to any point in time to replicate historical state.
 2. *Robustness* - if there's any failure in the database, or data is not committed or otherwise lost, you can fall back on the event log and try again, or restore from there.
 3. *Migrations* - data migrations can sometimes be very difficult, especially if it involves moving to an entirely different data model, and you need to keep the system running. Event sourcing simplifies this and dramatically diminishes the risk. The new database is just inflated by applying the events to the new data model or database instance. And it can be done in real time with no downtime, as you can carry on streaming the old events into the new data instance continuously, until you flick the switch over. 
 
