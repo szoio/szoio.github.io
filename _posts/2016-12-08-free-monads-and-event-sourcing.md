@@ -254,7 +254,7 @@ final case class CommandCapture[F[_], G[_]](interpreter: F ~> G) extends (F ~> G
 }
 ```
 
-But we can improve on this. The Rolls-Royce solution is to split the algebras completely into separate algebras with their own interpreters.
+But we can improve on this. A better solution is to split the algebras completely into separate algebras with their own interpreters.
 
 ```scala
 sealed trait ShipCommandOp[A] 
@@ -348,4 +348,6 @@ and we run our program with `program.foldMap(ShipOp2ConIO)` exactly as before. N
 
 With this architecture, we have decoupled commands from queries completely. Certain use cases, such as event playback, don't need to know about the queries at all, neither the algebra nor the interpreter. Other use cases, such as a web API, may need to know about both, and for this, we can easily form the coproduct and use them simultaneously.
 
-Well that's it for now - there's of course more that can be said on the topic, but if this inpires someone to use free monads to implement event sourcing, or if you're already using free monads and decide to take advantage of the (almost) free event sourcing it enables, I'd be really happy. It's really marvellous stuff, not hard to get enthusiastic about!
+Our event capture interpreter implementation here is quite naive, and has some significant shortcomings. Thanks to my colleague [Marek Kadek](https://github.com/KadekM) for pointing this out. Based on some really fruitful conversations we have come up with a better implementation that addresses these shortcomings. There's quite a lot to say about this, so rather than address it here, it will be discussed in a follow-up post.
+
+Well that's it for now - I hope this inpires someone to use free monads to implement event sourcing, or if you're already using free monads, that you decide to take advantage of the (almost) free event sourcing it enables. It's really marvellous stuff, not hard to get enthusiastic about!
