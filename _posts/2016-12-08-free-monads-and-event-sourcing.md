@@ -246,7 +246,7 @@ Then modify our event capture as follows:
 final case class CommandCapture[F[_], G[_]](interpreter: F ~> G) extends (F ~> G) {
   override def apply[A](fa: F[A]): G[A] = {
     fa match {
-      case _: ShipCommandOp[_]  => publishEvent()
+      case _: ShipCommandOp[_]  => publishEvent(fa)
       case _: ShipQueryOp[_]    => ()
     }
     interpreter.apply(fa)
@@ -339,10 +339,22 @@ type ShipOp[A] = Coproduct[ShipCommandOp, ShipQueryOp, A]
 ```
 We probably could have done the same thing with an implicit class, but this works nicely enough.
 
+Now we can simplify the `CommandCapture` interpreter:
+
+```scala
+final case class CommandCapture[F[_], G[_]](interpreter: F ~> G) extends (F ~> G) {
+  override def apply[A](fa: F[A]): G[A] = {
+    publishEvent(fa)
+    interpreter.apply(fa)
+  }
+}
+```
+
+
 Finally we need an interpreter that can interpret both command and query instructions in the coproduct `ShipOp` instruction set. Fortunately this is really easy with the `or` method of the natural transformation `~>[F[_], G[_]]` type class, and we end up with:
 
 ```scala
-val ShipOp2ConIO = LoggingInterp(ShipCommandOp2ConIO) or ShipQueryOp2ConIO
+val ShipOp2ConIO = CommandCapture(ShipCommandOp2ConIO) or ShipQueryOp2ConIO
 ```
 and we run our program with `program.foldMap(ShipOp2ConIO)` exactly as before. Note that we only wrap the command interpreter with the event capture wrapper.
 
