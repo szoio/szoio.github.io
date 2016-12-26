@@ -84,6 +84,7 @@ val f2FC = new (F ~> FC) {
       x <- fa.inject[FC]
   } yield x
 }
+```
 
 This is very simple. Every time we get an instruction of the form `F[A]`, we create new instruction that consists of an instruciton to log the instruction, combined with the original instruction. 
 
