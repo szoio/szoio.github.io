@@ -12,15 +12,15 @@ To summarise the implementation so far, restricted to the command side of the eq
 We then have an interpreter wrapper function:
 
 ```scala
-final case class CommandCapture[F[_], G[_]](interpreter: F ~> G) extends (F ~> G) {
-  override def apply[A](fa: F[A]): G[A] = {
+final case class CommandCapture[F[_], M[_]](interpreter: F ~> M) extends (F ~> M) {
+  override def apply[A](fa: F[A]): M[A] = {
     publishEvent(fa)
     interpreter.apply(fa)
   }
 }
 ```
 
-Here the `F` type constructor represents the free algebra, in this case `CommandOp`, and `G` represents the target monad, which could be something like `Task`.
+Here the `F` type constructor represents the free algebra, in this case `CommandOp`, and `M` represents the target monad, which could be something like `Task`.
 
 The given our original interpreter `commandInterpreter: CommandOp ~> Task`, we create a wrapped interpreter:
 
@@ -53,18 +53,245 @@ For various reaons however, there are some cases where we may want to use anothe
 
 So we can distill the problem to the following general case: 
 
-Given a free algebra `F`, and natural transformation `F ~> M` to a monad `M`, how do we create an augmented natural transformation `F ~> M` that allows us to capture the events in `F` but only process them when we process `M`. This is what we are going to derive.
+Given a free algebra `F` representing the command instructions, and natural transformation `F ~> M` to a monad `M`, how do we create an augmented natural transformation `F ~> M` that allows us to capture the events in `F` but only process them when we process `M`? This is what we are going to derive.
 
 The first step in the solution is practice what we preach, and abstract the process of logging events into its own free algebra. This algebra only needs a single Append event.
 
+```scala
+sealed trait EventOp[A]
+
+final case class Append(event: E) extends EventOp[Unit]  
 ```
 
+Now, instead of interpreting from `F` to `M` directly using our `F ~> M` natural transformation we create another layer `F ~> Free[C, ?]` where `C` is the coproduct of our original algebra `F` and the event logging algebra `EventOp` (note that the natural transformation destination type must be a monad). Then we construct an interpreter from `C ~> M`. Once we have this, it is straightforward to piece these together to get our desired `F ~> M` algebra that is able to process event logging effects.
+
+The above may sound a bit arcane to the anyone not accustomed to working with free monads, but we break it down below and explain in more detail.
+
+*Note that the `?` in `Free[C, ?]` is not native scala syntax, but is enabled by the [kind projector plugin](https://github.com/non/kind-projector).*
+
+Lets start with the interpreter from `F ~> Free[C, ?]`:
+
+```scala
+type C[A] =Coproduct[F, EventOp, A]
+type FC[A] = Free[C, A] 
+
+val f2FC = new (F ~> FC) {
+  def apply[A](f: F[A]): FC[A] = {
+    for {
+      _ <- Event(fa).inject[FC]
+      x <- fa.inject[FC]
+  } yield x
+}
+
+This is very simple. Every time we get an instruction of the form `F[A]`, we create new instruction that consists of an instruciton to log the instruction, combined with the original instruction. 
+
+So if we start off with a program of type `Free[F, ?]` comprising a set of instructions in `F`, and interpret them using:
+
+```scala
+val program: Free[F, ?]
+val loggingProgram = program.foldMap(f2FC)
 ```
 
+`loggingProgram` will end up being a new program in the augmented free monad `F[C, ?]` consisting of instructions from our original `F` algebra interleaved with instructions to log these `F` instructions as events. 
+
+Note that no processing of the event logging takes place. Compare this with the `CommandCapture` interpreter above.
+
+Proceeding, we create an interpreter `C ~> M` to our target monad `M`. This is also straightforward. 
+
+To do this, we need an interpreter `F ~> M`, which was a given in our setup, and we also need an interpreter to process the logging effects `EventOp ~> M`. We can then combine them with `f2M or e2M`. The `or` method on natural transformations takes instructions from `C`, and interprets `F` instrucions with `f2M` and `EventOp` instructions with `e2M`.
+
+Then we can chain these interpreters as follows:
+
+```scala
+val program: Free[F, ?]
+val m = program.foldMap(f2FC).foldMap(f2M or e2M)
+```
+
+The standard choice for `M` would be something like `Task`. We could then process with something like.
+
+```scala
+program.foldMap(f2FC).foldMap(f2M or e2M).unsafeRun()
+```
+
+There are times when we may want to choose another effect processing monad other than `Task`. This detail is dependent on the overall architecture. 
+
+A specific example is the case where both the application database and the event store are SQL relational databases, they are using the same data connection, and [Doobie](https://github.com/tpolecat/doobie) is used for data access. In this case it would make sense to choose the `ConnectionIO` free monad as the target monad `M`. If we do it this way we get the additional benefit that both commits to the application database and writes to the event log are conducted in the same database transaction.
+
+In the general case this may not be possible as the event log could be something completely different like a Kafka topic, a mechanism that is particularly suited to a microservices architecture. In this archtecture, the benefits extend even further to messaging between services.
+
+If there are any failures, we always prefer the application db to fail before the event log fails. If the event log fails first, it may not be possible restore the application database to the correct state from the event log, something for which the converse always holds, provided that all writes to the app db are idempotent. This is something we must bear in mind when designing our interpreters and their execution patterns.
+
+There is one detail that we still need to take care of, and that is the type `E` in
+
+```scala
+final case class Append(event: E) extends EventOp[Unit]  
+```
+
+In addition we have not considered any concrete implementations for the interpreter. This issues are related.
+
+What we want `E` to represent is a serialisable form of our command algebra `F`. Then our events will be serialised and stored in the event log. These days you need a reasonably good reason to not choose Json as a serialisation format, at least not until you data volume is such that binary serialisation becomes imperative. For Json processing in a FP Scala stack, [Circe](https://circe.github.io/circe/) is a good fit. The task of converting to and from Json is handled generically by `Encoder` and `Decoder` type classes. Other Json libraries work in similar ways using type classes of different names. In this case we need a way of passing the `Encoder` typeclass instance to the interpreter. This is not a Json specific requirement - converter typeclasses is the most suitable mechanism for handling encoding into any serialisation format.
+
+This is all reasonably straightforward to do if we have a single free monad, but what if we have multiple algebras, and we want to several of them to be event sourced, or if we wanted to create an event sourcing library that can capture events from any of our free monad algebras in a generic way. We start by asking the question if this is even possible, and it fortunately turns out that it is.
+
+Our first attempt is as follows:
+
+```scala
+sealed trait EventOp[E,　A]
+
+final case class Append[E](event: E) extends EventOp[E, Unit]  
+```
+
+We then propagate this new `EventOp` class through the rest of the stack. This means that each of the object that depend on this additional parameter. For example our coproduct becomes:
+
+```scala
+type C[E, A] = Coproduct[F, EventOp[E, ?], A]
+```
+
+Having this additional parameter allows us to pass in an `Encoder` type class instance into our interpreter in a generic way. This enables us to define an interpreter 
+
+```scala
+def e2M(implicit encoder: Encoder[E]) = new (EventOp[E,?] ~>　M) {
+  def apply[A](eva: EventOp[E,A]): M[A] = {
+    val json = eva.asJson // this requires an implicit Encoder[E] instance
+    ... // do something with the Json, like save it to Db or publish to Kafka
+  }
+}
+```
+
+However, with this approach, we start to push the limits of Scala's type inference capabilities. In particular, we run into problems with partially applied types. The particular problem we encounter is [SI-2712](https://issues.scala-lang.org/browse/SI-2712), evidently addresses in Scala 2.11.9 (not yet released) and 2.12, but not helpful for those stuck on 2.11.8.
+
+An alternative approach that proves to be more fruitful is to create a base trait with an abstract type, and create our interpreter layers within this trait.
+
+```scala
+trait EventSourcing {  self : EventInterpreter =>
+  // Abstract types
+  type M[_]   // The target monad
+  type F[_]   // The command algebra type
+  type E      // The event type
+
+  // Abstract methods
+  implicit def encoder : Encoder[E]   // Encoder instance for Json encoding
+  def f2e[A](fa : F[A]) : E           // Convertion from command to event
+
+  // Event algebra and single Append instruction
+  sealed trait EventOp[A]
+  final case class Append(event : E) extends EventOp[Unit]
+
+  // Shorthand types
+  type C[A] = Coproduct[F, EventOp, A]
+  type FC[A] = Free[C, A]
+
+  
+  val f2FC = new (F ~> FC) {
+    def apply[A](fa : F[A]) : FC[A] = {
+      for {
+        _ <- Free.inject[EventOp, C](Append(f2e(fa)))
+        x <- Free.inject[F, C](fa)
+      } yield x
+    }
+  }
+
+  def f2MLog(f2M: F ~> M)(implicit M: Monad[M]): F ~> M = new (F ~> M) {
+    override def apply[A](fa : F[A]) : M[A] = f2FC(fa).foldMap(f2M or e2M)
+  }
+}
+
+trait EventInterpreter { self: EventSourcing =>
+  def e2M(implicit M: Monad[M]): EventOp ~> M  // The event logging interpreter
+}
+```
+
+The base trait `EventSourcing` carries all the generic machinery, generalised over serveral dimensions.
+
+We then provide a specific implementation for `EventInterpreter.e2M`. In most cases we would need to fix the target monad `M` by overriding the type definition with a specific type. In this example, using Doobie to persist to a SQL event log, we don't need to, because Doobie works with a `Transactor` that itself is abstracted over the target monad.
+
+```scala
+trait Event2M extends EventSourcing with EventInterpreter {
+  
+  // doobie transactor, provided later when we fix M
+  def transactor: Transactor[M]
+
+  // Encoder instance for Json encoding, provided later when we fix E
+  def encoder : Encoder[E]
+
+  // SQL insert query as a Doobie ConnectionIO free monad
+  private def append(event: E): ConnectionIO[Int] =
+    sql"insert into mi.event(payload) values (${encoder(event)})".update.run
+
+  // Our implementation of the `e2M` event logging interpreter
+  override def e2M(implicit M: Monad[M]): EventOp ~> M = new (EventOp ~> M) {
+    override def apply[A](fa: EventOp[A]): M[A] = fa match {
+      case Append(e) =>
+        M.map(append(e).transact(transactor))(_ => ())
+    }
+  }
+}
+```
+
+Finally we create a algebra specific implementation, utilising these base traits. 
+Only at this stage do we fix the algebra `F[_]` and the event type `E`, and provide a few simple overrides.
+
+```scala
+object Command {
+  sealed trait CommandOp[A] { self: CommandEvent => }
+  sealed trait CommandEvent { self: CommandOp[_] => }
+
+  final case class CommandStr(str: String) extends CommandEvent with CommandOp[Unit]
+  final case class CommandInt(int: Int) extends CommandEvent with CommandOp[Boolean]
+
+  val commandEncoder: Encoder[CommandEvent] = semiauto.deriveEncoder[CommandEvent]
+  val commandDecoder: Decoder[CommandEvent] = semiauto.deriveDecoder[CommandEvent]
+
+  case class CommandEvent2T(trans: Transactor[Task]) extends Event2M {
+    override type F[A] = CommandOp[A]
+    override type E = CommandEvent
+    override type M[A] = Task[A]
+    override def transactor = trans
+
+    override def encoder : Encoder[CommandEvent] = commandEncoder
+    override def f2e[A](fa : CommandOp[A]) = fa.asInstanceOf[CommandEvent]
+  }
+
+  def command2TL(trans: Transactor[Task])(f2T: CommandOp ~> Task): CommandOp ~> Task =
+    CommandEvent2T(trans).f2MLog(f2T)
+}
+
+```
+
+Simply with `Command.command2TL` we can now convert any interpreter from a `CommandOp` to a `Task` into an enhanced interpreter that simulatanously logs these events to a SQL database in the execution of the task. We have solved the problem we have set out to address. 
+
+Some observations:
+
+* Our command events derive from two traits, `CommandOp[_]` and `CommandEvent`. The reason we require the `CommandEvent` in the first place is the Circe automatic encoder derivation only works for sealed traits  families of case class when the base trait is a concrete type, not a type constructor.
+* We need a mechanism to convert from a `CommandOp` to a `CommandEvent` (and vice versa for playback). The `f2e` method does this. In our implementation we are doing an `asInstanceOf` cast, which is normally considered bad practice, but having these traits requiring each other using `{ self: CommandEvent => }` etc. ensures that this cast will not fail.
+
+Our implementation relies on some more advanced features of Scala without which it would be impossible to set up such a generic event logging framework.
+
+### Playback
+
+Our one final topic is event playback. Playback involves reading from the event store, and creating a program in our free algebra that invokes the commands that have been stored. This then gets intrepreted as usual. A key point here is that the playback mechanism is completely separate from the interpretation, and unlike for recording, where we interleave command instructions with instructions to record these, it doesn't
+need to care what this interpreter is. So in this sense it is much simpler.
+
+Furthermore the generation of these instructions is closely aligned to the implementation details of the event recording interpreter.
+
+So there isn't really a problem to tackle in it's full generality. For this reason we only look at a specific example, and in this case based on the recording interpreter above, we consider playing back the event log from a SQL database.
+
+The complexity in playback is more performance related as we may be restoring a considerably large dataset. For this we use FS2.
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+ 
 
 
