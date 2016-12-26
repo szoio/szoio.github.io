@@ -7,7 +7,7 @@ date: 2016-12-08
 
 This post follows from the post on [Free Monads and Event Sourcing Architecture]({% post_url 2016-12-08-free-monads-and-event-sourcing %}). Here we develop a fully generic event sourcing interpreter framwork for capturing events from any free algegbra. We describe a concrete example instance that uses the [doobie](https://github.com/tpolecat/doobie) library to persist the events to a SQL database. Our implementation is typesafe and performant. 
 
-Even though our [implementation so far](({% post_url 2016-12-08-free-monads-and-event-sourcing %})) is vague, it is clearly evident that the approach so far is flawed. We can summarise as follows, restricting to the command side of the equation:
+Even though our [implementation so far]({% post_url 2016-12-08-free-monads-and-event-sourcing %}) is vague, it is clearly evident that the approach so far is flawed. We can summarise as follows, restricting to the command side of the equation:
 
 Suppose we have a an algebra `CommandOp` and a `publishEvent` method that can publish events of type `CommandOp[A]`.  
 
