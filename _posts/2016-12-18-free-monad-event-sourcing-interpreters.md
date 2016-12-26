@@ -200,7 +200,6 @@ trait EventSourcing {  self : EventInterpreter =>
   type C[A]  = Coproduct[F, EventOp, A]
   type FC[A] = Free[C, A]
 
-  
   val f2FC = new (F ~> FC) {
     def apply[A](fa : F[A]) : FC[A] = {
       for {
