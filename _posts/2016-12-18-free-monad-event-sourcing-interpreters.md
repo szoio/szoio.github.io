@@ -219,9 +219,9 @@ trait EventInterpreter { self: EventSourcing =>
 }
 ```
 
-The base trait `EventSourcing` carries all the generic machinery, generalised over serveral dimensions.
+The base trait `EventSourcing` carries all the generic machinery, generalised over the command algebra, and the effect processing monad, without limiting the choice of interpreter implementation.
 
-We then provide a specific implementation for `EventInterpreter.e2M`. In most cases we would need to fix the target monad `M` by overriding the type definition with a specific type. In this example, using doobie to persist to a SQL event log, we don't need to, because doobie works with a `Transactor` that itself is abstracted over the target monad.
+We then provide a specific implementation for `EventInterpreter.e2M`. In most cases we would need to fix the target monad `M` by overriding the type definition with a specific type. In our example below using [doobie](https://github.com/tpolecat/doobie) to persist to a SQL event log, we don't need to. This is because doobie works with a `Transactor` that itself is abstracted over the target monad.
 
 ```scala
 trait Event2M extends EventSourcing with EventInterpreter {
