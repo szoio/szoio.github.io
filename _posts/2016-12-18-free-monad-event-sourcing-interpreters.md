@@ -114,7 +114,7 @@ Note that no processing of the event logging takes place at this point. Compare 
 
 Proceeding, we create an interpreter `C ~> M` to our target monad `M`. This is also straightforward. 
 
-To do this, we need an interpreter `F ~> M`, which was a given in our setup, and we also need an interpreter to process the logging effects `EventOp ~> M`. We can then combine them with `f2M or e2M`. The `or` method on natural transformations takes instructions from `C`, and interprets `F` instrucions with `f2M` and `EventOp` instructions with `e2M`.
+To do this, we need an interpreter `F ~> M`, which was a given in our setup, and we also require an interpreter to process the logging effects `EventOp ~> M`. We can then combine them with `f2M or e2M`. The `or` method on natural transformations takes instructions from `C`, and interprets `F` instrucions with `f2M` and `EventOp` instructions with `e2M`.
 
 Then we can chain these interpreters as follows:
 
@@ -123,7 +123,7 @@ val program: Free[F, ?]
 val m = program.foldMap(f2FC).foldMap(f2M or e2M)
 ```
 
-The standard choice for `M` would be something like `Task`. We could then process with something like
+The standard choice for `M` would be something like `Task` as previously mentioned. We could then process with something like
 
 ```scala
 program.foldMap(f2FC).foldMap(f2M or e2M).unsafeRun()
@@ -131,9 +131,9 @@ program.foldMap(f2FC).foldMap(f2M or e2M).unsafeRun()
 
 There are times when we may want to choose another effect processing monad other than `Task`. This detail is dependent on the overall architecture. 
 
-A specific example is the case where both the application database and the event store are SQL relational databases. Further, suppose they are using the same data connection, and [doobie](https://github.com/tpolecat/doobie) is used for data access. In this case it would make sense to choose the `ConnectionIO` free monad as the target monad `M`. If we do it this way we get the additional benefit that both commits to the application database and writes to the event log are performed in the same database transaction.
+For a specific example of this, suppose both the application database and the event store are SQL relational databases. Further, suppose they are using the same data connection, and [doobie](https://github.com/tpolecat/doobie) is used for data access. In this case it would make sense to choose the `ConnectionIO` free monad as the target monad `M`. If we do it this way we get the additional benefit that both commits to the application database and writes to the event log are performed in the same database transaction.
 
-In the general case this may not be possible as the event log could be a NoSQL database such as Cassandra, or something completely different like a Kafka topic, a choice that would be well suited to a microservices architecture. Here the eventlog also serves as a message queue.
+In the general case this may not be possible as the event log may be a NoSQL database such as Cassandra, or something completely different like a Kafka topic, a choice that would be well suited to a microservices architecture. Here the eventlog also serves as a message queue that can be used for communicating between services.
 
 If there are any failures, we always prefer the application database to fail before the event log fails. If the event log fails first, it may not be possible restore the application database to the correct state from the event log, something for which the converse always holds, provided that all writes to the application database are idempotent. This is something we must bear in mind when designing our interpreters and their execution patterns.
 
