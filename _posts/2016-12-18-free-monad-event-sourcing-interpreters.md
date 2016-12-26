@@ -95,7 +95,6 @@ val f2FC = new (F ~> FC) {
       x <- fa.inject[FC]
   } yield x
 }
-```
 
 This is very simple. Every time we get an instruction of the form `F[A]`, we create a code fragment that consists of an instruction combined with an addtional instruction to log the instruction. We inject both these instructions into the free monad of the coproduct of the `F` and `EventOp` algebras.
 
@@ -223,7 +222,7 @@ trait EventInterpreter { self: EventSourcing =>
 
 The base trait `EventSourcing` carries all the generic machinery, generalised over serveral dimensions.
 
-We then provide a specific implementation for `EventInterpreter.e2M`. In most cases we would need to fix the target monad `M` by overriding the type definition with a specific type. In this example, using Doobie to persist to a SQL event log, we don't need to, because Doobie works with a `Transactor` that itself is abstracted over the target monad.
+We then provide a specific implementation for `EventInterpreter.e2M`. In most cases we would need to fix the target monad `M` by overriding the type definition with a specific type. In this example, using doobie to persist to a SQL event log, we don't need to, because doobie works with a `Transactor` that itself is abstracted over the target monad.
 
 ```scala
 trait Event2M extends EventSourcing with EventInterpreter {
@@ -234,7 +233,7 @@ trait Event2M extends EventSourcing with EventInterpreter {
   // Encoder instance for Json encoding, provided later when we fix E
   def encoder : Encoder[E]
 
-  // SQL insert query as a Doobie ConnectionIO free monad
+  // SQL insert query as a doobie ConnectionIO free monad
   private def append(event: E): ConnectionIO[Int] =
     sql"insert into mi.event(payload) values (${encoder(event)})".update.run
 
@@ -291,6 +290,9 @@ Some observations:
 
 One last piece in the event sourcing puzzle is event playback. We'll briefly discuss this in a follow up post.
 
+## Acknowledgements
+
+Thanks to [Marek Kadek](https://github.com/KadekM) for some excellent critical input on [the previous post]({% post_url 2016-12-08-free-monads-and-event-sourcing %}) and some excellent ideas and suggestions that helped reach the elegant outcome described above. 
 
 
 
