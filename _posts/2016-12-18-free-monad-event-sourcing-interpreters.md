@@ -86,9 +86,9 @@ val f2FC = new (F ~> FC) {
 }
 ```
 
-This is very simple. Every time we get an instruction of the form `F[A]`, we create new instruction that consists of an instruciton to log the instruction, combined with the original instruction. 
+This is very simple. Every time we get an instruction of the form `F[A]`, we create a code fragment that consists of an instruction combined with an addtional instruction to log the instruction. We inject both these instructions into the free monad of the coproduct of the `F` and `EventOp` algebras.
 
-So if we start off with a program of type `Free[F, ?]` comprising a set of instructions in `F`, and interpret them using:
+Then if we start off with a program of type `Free[F, ?]` comprising a set of instructions in `F`, and interpret them using:
 
 ```scala
 val program: Free[F, ?]
@@ -110,7 +110,7 @@ val program: Free[F, ?]
 val m = program.foldMap(f2FC).foldMap(f2M or e2M)
 ```
 
-The standard choice for `M` would be something like `Task`. We could then process with something like.
+The standard choice for `M` would be something like `Task`. We could then process with something like
 
 ```scala
 program.foldMap(f2FC).foldMap(f2M or e2M).unsafeRun()
@@ -130,7 +130,7 @@ There is one detail that we still need to take care of, and that is the type `E`
 final case class Append(event: E) extends EventOp[Unit]  
 ```
 
-In addition we have not yet considered any concrete implementations for the interpreter. This issues are related.
+In addition we have not yet considered any concrete implementations for the interpreter. We deal with both these below.
 
 What we want `E` to represent is a serialisable form of our command algebra `F`. Then our events will be serialised and stored in the event log. These days you need a reasonably good reason to not choose Json as a serialisation format, at least not until you data volume is such that binary serialisation becomes imperative. For Json processing in a FP Scala stack, [Circe](https://circe.github.io/circe/) is a good fit. 
 
