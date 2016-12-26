@@ -57,6 +57,8 @@ So we can distill the problem to the following general requirement:
 
 Given a free algebra `F` representing the command instructions, and natural transformation `F ~> M` to a monad `M`, how do we create an augmented natural transformation `F ~> M` that allows us to capture the events in `F` but only process them when we process `M`? This is what we are going to derive.
 
+## Abstracting event logging with free monads
+
 The first step in the solution is practice what we preach, and abstract the process of logging events into its own free algebra. This algebra only needs a single `Append` instruction.
 
 ```scala
@@ -124,6 +126,8 @@ In the general case this may not be possible as the event log could be a NoSQL d
 
 If there are any failures, we always prefer the application database to fail before the event log fails. If the event log fails first, it may not be possible restore the application database to the correct state from the event log, something for which the converse always holds, provided that all writes to the application database are idempotent. This is something we must bear in mind when designing our interpreters and their execution patterns.
 
+## Creating an event logging interpreter
+
 There is one detail that we still need to take care of, and that is the type `E` in
 
 ```scala
@@ -132,7 +136,7 @@ final case class Append(event: E) extends EventOp[Unit]
 
 In addition we have not yet considered any concrete implementations for the interpreter. We deal with both these below.
 
-What we want `E` to represent is a serialisable form of our command algebra `F`. Then our events will be serialised and stored in the event log. These days you need a reasonably good reason to not choose Json as a serialisation format, at least not until you data volume is such that binary serialisation becomes imperative. For Json processing in a FP Scala stack, [Circe](https://circe.github.io/circe/) is a good fit. 
+What we want `E` to represent is a serialisable form of our command algebra `F`. Using this our events will be serialised and persisted in the event log. These days you need a decent reason to not choose Json as a serialisation format, at least not until you data volume is such that binary serialisation becomes imperative. For Json processing in a FP Scala stack, especially using [Cats](http://typelevel.org/cats/), [Circe](https://circe.github.io/circe/) is a good fit. 
 
 The task of converting to and from Json is handled generically by `Encoder` and `Decoder` type classes. Other Json libraries work in similar ways using type classes of different names. In this case we need a way of passing the `Encoder` typeclass instance to the interpreter. This is not a Json specific requirement - converter typeclasses is the most suitable mechanism for handling encoding into any serialisation format.
 
@@ -185,7 +189,7 @@ trait EventSourcing {  self : EventInterpreter =>
   final case class Append(event : E) extends EventOp[Unit]
 
   // Shorthand types
-  type C[A] = Coproduct[F, EventOp, A]
+  type C[A]  = Coproduct[F, EventOp, A]
   type FC[A] = Free[C, A]
 
   
@@ -253,13 +257,13 @@ object Command {
   val commandDecoder: Decoder[CommandEvent] = semiauto.deriveDecoder[CommandEvent]
 
   case class CommandActions(trans: Transactor[Task]) extends Event2M {
-    override type F[A] = CommandOp[A]
-    override type E = CommandEvent
-    override type M[A] = Task[A]
+    override type F[A]      = CommandOp[A]
+    override type E         = CommandEvent
+    override type M[A]      = Task[A]
     override def transactor = trans
 
     override def encoder : Encoder[CommandEvent] = commandEncoder
-    override def f2e[A](fa : CommandOp[A]) = fa.asInstanceOf[CommandEvent]
+    override def f2e[A](fa : CommandOp[A])       = fa.asInstanceOf[CommandEvent]
   }
 
   def loggingInterpreter(trans: Transactor[Task])(f2T: CommandOp ~> Task)
@@ -269,16 +273,14 @@ object Command {
 
 ```
 
-Simply with `Command.loggingInterpreter` we can now convert any interpreter from a `CommandOp` to a `Task` into an enhanced interpreter that simulatanously logs these events to a SQL database in the execution of the task. We have solved the problem we have set out to address. 
+Simply with `Command.loggingInterpreter` we can now convert any interpreter from a `CommandOp` to a `Task` into an enhanced interpreter that simulatanously logs these events to a SQL database in the execution of the task. This is the solution to our original problem. 
 
 Some observations:
 
-* Our command events derive from two traits, `CommandOp[_]` and `CommandEvent`. The reason we require the `CommandEvent` in the first place is the Circe automatic encoder derivation only works for sealed traits  families of case class when the base trait is a concrete type, not a type constructor.
+* Our command events derive from two traits, `CommandOp[_]` and `CommandEvent`. The reason we require the `CommandEvent` in the first place is the Circe automatic encoder derivation only works for sealed trait families of case classes where the base trait is a concrete type, not a type constructor.
 * We need a mechanism to convert from a `CommandOp` to a `CommandEvent` (and vice versa for playback). The `f2e` method does this. In our implementation we are doing an `asInstanceOf` cast, which is normally considered bad practice, but having these traits requiring each other using `{ self: CommandEvent => }` etc. ensures that this cast will not fail.
 
-Our implementation relies on some more advanced features of Scala without which it would be impossible to set up such a generic event logging framework.
-
-One last piece in the event sourcing puzzle is playback. We'll briefly discuss this in a follow up post.
+One last piece in the event sourcing puzzle is event playback. We'll briefly discuss this in a follow up post.
 
 
 
