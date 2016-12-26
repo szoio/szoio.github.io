@@ -237,7 +237,7 @@ trait Event2M extends EventSourcing with EventInterpreter {
 
   // SQL insert query as a doobie ConnectionIO free monad
   private def append(event: E): ConnectionIO[Int] =
-    sql"insert into mi.event(payload) values (${encoder(event)})".update.run
+    sql"insert into event(payload) values (${encoder(event)})".update.run
 
   // Our implementation of the `e2M` event logging interpreter
   override def e2M(implicit M: Monad[M]): EventOp ~> M = new (EventOp ~> M) {
