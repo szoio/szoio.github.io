@@ -97,7 +97,9 @@ val f2FC = new (F ~> FC) {
 }
 ```
 
-This is very simple. Every time we get an instruction of the form `F[A]`, we create a code fragment that consists of an instruction combined with an addtional instruction to log the instruction. We inject both these instructions into the free monad of the coproduct of the `F` and `EventOp` algebras.
+This is very simple. Every time we get an instruction of the form `F[A]`, we create a code fragment that consists of an instruction combined with an addtional instruction to log the instruction. 
+
+We inject both these instructions into the free monad of the coproduct of the `F` and `EventOp` algebras. This is necessary because all operations in a sequence operations must belong to the same free monad, regardless of which algebra they belong to. The coproduct free monad is the smallest free monad that supports both `F` and `EventOp` instructions.
 
 Then if we start off with a program of type `Free[F, ?]` comprising a set of instructions in `F`, and interpret them using:
 
@@ -108,7 +110,7 @@ val loggingProgram = program.foldMap(f2FC)
 
 `loggingProgram` will end up being a new program in the augmented free monad `F[C, ?]` consisting of instructions from our original `F` algebra interleaved with instructions to log these `F` instructions as events. 
 
-Note that no processing of the event logging takes place. Compare this with the `CommandCapture` interpreter above.
+Note that no processing of the event logging takes place at this point. Compare this with the `CommandCapture` interpreter above.
 
 Proceeding, we create an interpreter `C ~> M` to our target monad `M`. This is also straightforward. 
 
