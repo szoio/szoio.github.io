@@ -1,7 +1,7 @@
 ---
 layout: post
 slug: free-monads-and-event-sourcing
-title: Free Monads and Event Sourcing Architecture
+title: Free monads and Event Sourcing Architecture
 date: 2016-12-08
 ---
 
@@ -360,6 +360,6 @@ and we run our program with `program.foldMap(ShipOp2ConIO)` exactly as before. N
 
 With this architecture, we have decoupled commands from queries completely. Certain use cases, such as event playback, don't need to know about the queries at all, neither the algebra nor the interpreter. Other use cases, such as a web API, may need to know about both, and for this, we can easily form the coproduct and use them simultaneously.
 
-Our event capture interpreter implementation here is quite naive, and has some significant shortcomings. Thanks to my colleague [Marek Kadek](https://github.com/KadekM) for pointing this out. Based on some really fruitful conversations we have come up with a better implementation that addresses these shortcomings. There's quite a lot to say about this, both in terms of what these shortcomings are and their resolution, so rather than address it here, it will be discussed in a follow-up post.
+Our event capture interpreter implementation here is quite naive, and has some significant shortcomings. Thanks to my colleague [Marek Kadek](https://github.com/KadekM) for pointing this out. Based on some really fruitful conversations we have come up with a better implementation that addresses these shortcomings. There's quite a lot to say about this, both in terms of what these shortcomings are and their resolution, so rather than address it here, it will be discussed in the follow-up post [Free Monad Event Sourcing Interpreters]({% post_url 2016-12-18-free-monad-event-sourcing-interpreters %}).
 
 Well that's it for now - I hope this inpires someone to use free monads to implement event sourcing, or if you're already using free monads, that you decide to take advantage of the (almost) free event sourcing it enables. It's really marvellous stuff, not hard to get enthusiastic about!
