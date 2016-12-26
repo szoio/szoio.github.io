@@ -5,9 +5,11 @@ title: Interpreters for Event Sourcing Free Monads
 date: 2016-12-08
 ---
 
-This post follows from the post on [Free Monads and Event Sourcing Architecture]({% post_url 2016-12-08-free-monads-and-event-sourcing %}). The event sourcing interpreter implementation was a bit vague, and we will develop fully it in this post.
+This post follows from the post on [Free Monads and Event Sourcing Architecture]({% post_url 2016-12-08-free-monads-and-event-sourcing %}). Here we develop a fully generic event sourcing interpreter framwork for capturing events from any free algegbra. We describe a concrete example instance that uses the [doobie](https://github.com/tpolecat/doobie) library to persist the events to a SQL database. Our implementation is typesafe and performant. 
 
-To summarise the implementation so far, restricted to the command side of the equation, suppose we have a an algebra `CommandOp` and a `publishEvent` method that can publish events of type `CommandOp[A]`.  
+Even though our [implementation so far](({% post_url 2016-12-08-free-monads-and-event-sourcing %})) is vague, it is clearly evident that the approach so far is flawed. We can summarise as follows, restricting to the command side of the equation:
+
+Suppose we have a an algebra `CommandOp` and a `publishEvent` method that can publish events of type `CommandOp[A]`.  
 
 We then have an interpreter wrapper function:
 
@@ -41,21 +43,21 @@ One of the main purposes of the `Task` monad is to delay the execution of effect
 
 The problem here is `publishEvent` is effectful code, and inserting it here violates these principles. 
 
-This may sound quite abstract, but to point out a specific concrete consequence of this, note that in `val commandTask = program.foldMap(capturingInterpreter)` a task is simply created, and no effect should have taken place. But in doing so, we have already logged the operation! But just because you create a task, it doesn't mean you need to take it further. It's fully your prerogative to decide not to execute it, or to execute it several times. In both these cases, we would have logged the operation exactly once. In the latter case, it shouldn't make any difference whether the event is inserted once or many times, due to the idempotence condition of the event sourcing implementation, but it's still clearly flawed.
+This may sound quite abstract, but to point out a specific concrete consequence of this, note that in `val commandTask = program.foldMap(capturingInterpreter)` a task is simply created, and no effect should have taken place. But in doing so, we have already logged the operation! But just because you create a task, it doesn't mean you need to take it further. It's your prerogative to *not* execute it, or to execute it several times. In both these cases, we would have logged the operation exactly once. In the latter case, it shouldn't make any difference whether the event is inserted once or many times, due to the idempotence condition of the event sourcing implementation, but it's still far from ideal.
 
 Now that we understand the problem, what can we do to improve it?
 
-Firstly, it's worth noting that most free monad interpreters are effectful, and quite by definition, any useful interpreter of a "command" algebra is effectful. As described above, it's a good practice to seek to delay the processing of these effects to a final end step. As a consequence we may have several layers of interpreters, where each one is a natural transformation from one monad to another. The final transformation would be to a monad such as `Task`, who's purpose it is to process these effects. We can represent the chained sequence of transformations by the type `CommandOp ~> Task`. 
+Firstly, it's worth noting that most free monad interpreters are effectful, and quite by definition, any useful interpreter of a "command" algebra is effectful. As described above, it's a good practice to seek to delay the processing of these effects to a final end step. Consequently we may have several layers of interpreters, where each one is a natural transformation from one monad to another. The final transformation would be to a monad such as `Task`, who's purpose it is to process these effects. We can represent the chained sequence of transformations by the type `CommandOp ~> Task`. 
 
 A desireable property of our event sourcing implementation in this case is that it also only performs the event logging operations as part of running a `Task` instance.
 
 For various reaons however, there are some cases where we may want to use another effect processing monad, such as `Future`. In these cases we also want the event sourcing implementation to adhere to this, and do the actual logging of events by executing a `Future`.
 
-So we can distill the problem to the following general case: 
+So we can distill the problem to the following general requirement: 
 
 Given a free algebra `F` representing the command instructions, and natural transformation `F ~> M` to a monad `M`, how do we create an augmented natural transformation `F ~> M` that allows us to capture the events in `F` but only process them when we process `M`? This is what we are going to derive.
 
-The first step in the solution is practice what we preach, and abstract the process of logging events into its own free algebra. This algebra only needs a single Append event.
+The first step in the solution is practice what we preach, and abstract the process of logging events into its own free algebra. This algebra only needs a single `Append` instruction.
 
 ```scala
 sealed trait EventOp[A]
@@ -65,14 +67,14 @@ final case class Append(event: E) extends EventOp[Unit]
 
 Now, instead of interpreting from `F` to `M` directly using our `F ~> M` natural transformation we create another layer `F ~> Free[C, ?]` where `C` is the coproduct of our original algebra `F` and the event logging algebra `EventOp` (note that the natural transformation destination type must be a monad). Then we construct an interpreter from `C ~> M`. Once we have this, it is straightforward to piece these together to get our desired `F ~> M` algebra that is able to process event logging effects.
 
-The above may sound a bit arcane to the anyone not accustomed to working with free monads, but we break it down below and explain in more detail.
+This may sound a bit arcane to anyone not accustomed to working with free monads, but we break it down below and explain in more detail.
 
 *Note that the `?` in `Free[C, ?]` is not native scala syntax, but is enabled by the [kind projector plugin](https://github.com/non/kind-projector).*
 
 Lets start with the interpreter from `F ~> Free[C, ?]`:
 
 ```scala
-type C[A] =Coproduct[F, EventOp, A]
+type C[A]  = Coproduct[F, EventOp, A]
 type FC[A] = Free[C, A] 
 
 val f2FC = new (F ~> FC) {
@@ -115,11 +117,11 @@ program.foldMap(f2FC).foldMap(f2M or e2M).unsafeRun()
 
 There are times when we may want to choose another effect processing monad other than `Task`. This detail is dependent on the overall architecture. 
 
-A specific example is the case where both the application database and the event store are SQL relational databases, they are using the same data connection, and [Doobie](https://github.com/tpolecat/doobie) is used for data access. In this case it would make sense to choose the `ConnectionIO` free monad as the target monad `M`. If we do it this way we get the additional benefit that both commits to the application database and writes to the event log are conducted in the same database transaction.
+A specific example is the case where both the application database and the event store are SQL relational databases. Further, suppose they are using the same data connection, and [doobie](https://github.com/tpolecat/doobie) is used for data access. In this case it would make sense to choose the `ConnectionIO` free monad as the target monad `M`. If we do it this way we get the additional benefit that both commits to the application database and writes to the event log are performed in the same database transaction.
 
-In the general case this may not be possible as the event log could be something completely different like a Kafka topic, a mechanism that is particularly suited to a microservices architecture. In this archtecture, the benefits extend even further to messaging between services.
+In the general case this may not be possible as the event log could be a NoSQL database such as Cassandra, or something completely different like a Kafka topic, a choice that would be well suited to a microservices architecture. Here the eventlog also serves as a message queue.
 
-If there are any failures, we always prefer the application db to fail before the event log fails. If the event log fails first, it may not be possible restore the application database to the correct state from the event log, something for which the converse always holds, provided that all writes to the app db are idempotent. This is something we must bear in mind when designing our interpreters and their execution patterns.
+If there are any failures, we always prefer the application database to fail before the event log fails. If the event log fails first, it may not be possible restore the application database to the correct state from the event log, something for which the converse always holds, provided that all writes to the application database are idempotent. This is something we must bear in mind when designing our interpreters and their execution patterns.
 
 There is one detail that we still need to take care of, and that is the type `E` in
 
@@ -127,11 +129,15 @@ There is one detail that we still need to take care of, and that is the type `E`
 final case class Append(event: E) extends EventOp[Unit]  
 ```
 
-In addition we have not considered any concrete implementations for the interpreter. This issues are related.
+In addition we have not yet considered any concrete implementations for the interpreter. This issues are related.
 
-What we want `E` to represent is a serialisable form of our command algebra `F`. Then our events will be serialised and stored in the event log. These days you need a reasonably good reason to not choose Json as a serialisation format, at least not until you data volume is such that binary serialisation becomes imperative. For Json processing in a FP Scala stack, [Circe](https://circe.github.io/circe/) is a good fit. The task of converting to and from Json is handled generically by `Encoder` and `Decoder` type classes. Other Json libraries work in similar ways using type classes of different names. In this case we need a way of passing the `Encoder` typeclass instance to the interpreter. This is not a Json specific requirement - converter typeclasses is the most suitable mechanism for handling encoding into any serialisation format.
+What we want `E` to represent is a serialisable form of our command algebra `F`. Then our events will be serialised and stored in the event log. These days you need a reasonably good reason to not choose Json as a serialisation format, at least not until you data volume is such that binary serialisation becomes imperative. For Json processing in a FP Scala stack, [Circe](https://circe.github.io/circe/) is a good fit. 
 
-This is all reasonably straightforward to do if we have a single free monad, but what if we have multiple algebras, and we want to several of them to be event sourced, or if we wanted to create an event sourcing library that can capture events from any of our free monad algebras in a generic way. We start by asking the question if this is even possible, and it fortunately turns out that it is.
+The task of converting to and from Json is handled generically by `Encoder` and `Decoder` type classes. Other Json libraries work in similar ways using type classes of different names. In this case we need a way of passing the `Encoder` typeclass instance to the interpreter. This is not a Json specific requirement - converter typeclasses is the most suitable mechanism for handling encoding into any serialisation format.
+
+This is all reasonably straightforward to do if we have a single free monad, but what if we have multiple algebras, and we want to several of them to be event sourced, or if we wanted to create an event sourcing library that can capture events from any of our free monad algebras in a generic way?
+
+We start by asking the question if this is even possible, and it fortunately turns out that it is.
 
 Our first attempt is as follows:
 
@@ -255,14 +261,14 @@ object Command {
     override def f2e[A](fa : CommandOp[A]) = fa.asInstanceOf[CommandEvent]
   }
 
-  def command2TL(trans: Transactor[Task])(f2T: CommandOp ~> Task)
+  def loggingInterpreter(trans: Transactor[Task])(f2T: CommandOp ~> Task)
     : CommandOp ~> Task =
     CommandActions(trans).f2MLog(f2T)
 }
 
 ```
 
-Simply with `Command.command2TL` we can now convert any interpreter from a `CommandOp` to a `Task` into an enhanced interpreter that simulatanously logs these events to a SQL database in the execution of the task. We have solved the problem we have set out to address. 
+Simply with `Command.loggingInterpreter` we can now convert any interpreter from a `CommandOp` to a `Task` into an enhanced interpreter that simulatanously logs these events to a SQL database in the execution of the task. We have solved the problem we have set out to address. 
 
 Some observations:
 
