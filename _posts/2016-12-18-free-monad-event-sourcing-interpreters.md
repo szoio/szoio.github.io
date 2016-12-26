@@ -7,7 +7,7 @@ date: 2016-12-18
 
 This post follows from the post on [Free Monads and Event Sourcing Architecture]({% post_url 2016-12-08-free-monads-and-event-sourcing %}). Here we develop a fully generic event sourcing interpreter framwork for capturing events from any free algegbra. We describe a concrete example instance that uses the [doobie](https://github.com/tpolecat/doobie) library to persist the events to a SQL database. Our implementation is typesafe and performant. 
 
-Even though our [implementation so far]({% post_url 2016-12-08-free-monads-and-event-sourcing %}) is vague, it is clearly evident that the approach so far is flawed. We can summarise as follows, restricting to the command side of the equation:
+Even though our [implementation so far]({% post_url 2016-12-08-free-monads-and-event-sourcing %}) is vague, it is clearly evident that the approach taken is flawed. We summarise in the section following, restricting to the command side of the equation, and explain the shortcomings.
 
 Suppose we have a an algebra `CommandOp` and a `publishEvent` method that can publish events of type `CommandOp[A]`.  
 
@@ -34,12 +34,14 @@ Then when we run our program as follows:
 
 ```scala
 val commandTask = program.foldMap(capturingInterpreter)
-val result = commandTask.unsafeRun()
+val result      = commandTask.unsafeRun()
 ```
 
 There are significant problems with this approach. 
 
-One of the main purposes of the `Task` monad is to delay the execution of effectful code until the latest possible stage. Any code that has effects should be wrapped in a `Task` object, and the processing of these tasks should happen in the execution of `Task.unsafeRun()`. The code that generates this `Task` object should itself be pure, and have no effects. When this practice is adhered to, we can rely on it that any code that is not executed `Task.unsafeRun()` is referentially transparent, and can be much more easily reasoned about. And in particular any code that isn't wrapped doesn't involve `Task` at all, can be assured to be pure. `Task` becomes a containment zone for impure code.
+One of the main purposes of the `Task` monad is to delay the execution of effectful code until the latest possible stage. Any code that has effects should be wrapped in a `Task` object, and the processing of these tasks should happen in the execution of `Task.unsafeRun()`. The code that generates this `Task` object should itself be pure, and have no effects. 
+
+When this practice is adhered to, we can rely on it that any code that is not executed `Task.unsafeRun()` is referentially transparent, and can be much more easily reasoned about. And in particular any code that isn't wrapped doesn't involve `Task` at all, can be assured to be pure. `Task` becomes a containment zone for impure code.
 
 The problem here is `publishEvent` is effectful code, and inserting it here violates these principles. 
 
