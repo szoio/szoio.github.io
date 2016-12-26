@@ -95,6 +95,7 @@ val f2FC = new (F ~> FC) {
       x <- fa.inject[FC]
   } yield x
 }
+```
 
 This is very simple. Every time we get an instruction of the form `F[A]`, we create a code fragment that consists of an instruction combined with an addtional instruction to log the instruction. We inject both these instructions into the free monad of the coproduct of the `F` and `EventOp` algebras.
 
