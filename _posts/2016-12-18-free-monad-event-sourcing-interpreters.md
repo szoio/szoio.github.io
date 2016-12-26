@@ -277,8 +277,7 @@ object Command {
   }
 
   def loggingInterpreter(trans: Transactor[Task])(f2T: CommandOp ~> Task)
-    : CommandOp ~> Task =
-    CommandActions(trans).f2MLog(f2T)
+    : CommandOp ~> Task = CommandActions(trans).f2MLog(f2T)
 }
 
 ```
