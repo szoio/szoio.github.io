@@ -9,7 +9,7 @@ This post follows from the post on [Free Monads and Event Sourcing Architecture]
 
 Even though our [implementation so far]({% post_url 2016-12-08-free-monads-and-event-sourcing %}) is vague, it is clearly evident that the approach taken is flawed. We summarise in the section following, restricting to the command side of the equation, and explain the shortcomings.
 
-Suppose we have a an algebra `CommandOp` and a `publishEvent` method that can publish events of type `CommandOp[A]`.  
+Suppose we have a an algebra `CommandOp` and a `publishEvent` method that can publish events (instructions of this type).  
 
 We then have an interpreter wrapper function:
 
