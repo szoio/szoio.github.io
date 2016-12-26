@@ -5,7 +5,7 @@ title: Interpreters for Event Sourcing Free Monads
 date: 2016-12-08
 ---
 
-This post follows from the post on [Free Monads and Event Sourcing Architecture]({% post_url 2016-12-08-free-monads-and-event-sourcing %}). The event sourcing interpreter implementation was a bit vague, and we will develop it in this post.
+This post follows from the post on [Free Monads and Event Sourcing Architecture]({% post_url 2016-12-08-free-monads-and-event-sourcing %}). The event sourcing interpreter implementation was a bit vague, and we will develop fully it in this post.
 
 To summarise the implementation so far, restricted to the command side of the equation, suppose we have a an algebra `CommandOp` and a `publishEvent` method that can publish events of type `CommandOp[A]`.  
 
@@ -236,13 +236,16 @@ object Command {
   sealed trait CommandOp[A] { self: CommandEvent => }
   sealed trait CommandEvent { self: CommandOp[_] => }
 
-  final case class CommandStr(str: String) extends CommandEvent with CommandOp[Unit]
-  final case class CommandInt(int: Int) extends CommandEvent with CommandOp[Boolean]
+  // Commands
+  final case class CommandStr(str: String) 
+    extends CommandEvent with CommandOp[Unit]   
+  final case class CommandInt(int: Int) 
+    extends CommandEvent with CommandOp[Boolean]
 
   val commandEncoder: Encoder[CommandEvent] = semiauto.deriveEncoder[CommandEvent]
   val commandDecoder: Decoder[CommandEvent] = semiauto.deriveDecoder[CommandEvent]
 
-  case class CommandEvent2T(trans: Transactor[Task]) extends Event2M {
+  case class CommandActions(trans: Transactor[Task]) extends Event2M {
     override type F[A] = CommandOp[A]
     override type E = CommandEvent
     override type M[A] = Task[A]
@@ -252,8 +255,9 @@ object Command {
     override def f2e[A](fa : CommandOp[A]) = fa.asInstanceOf[CommandEvent]
   }
 
-  def command2TL(trans: Transactor[Task])(f2T: CommandOp ~> Task): CommandOp ~> Task =
-    CommandEvent2T(trans).f2MLog(f2T)
+  def command2TL(trans: Transactor[Task])(f2T: CommandOp ~> Task)
+    : CommandOp ~> Task =
+    CommandActions(trans).f2MLog(f2T)
 }
 
 ```
@@ -267,22 +271,7 @@ Some observations:
 
 Our implementation relies on some more advanced features of Scala without which it would be impossible to set up such a generic event logging framework.
 
-### Playback
-
-Our one final topic is event playback. Playback involves reading from the event store, and creating a program in our free algebra that invokes the commands that have been stored. This then gets intrepreted as usual. A key point here is that the playback mechanism is completely separate from the interpretation, and unlike for recording, where we interleave command instructions with instructions to record these, it doesn't
-need to care what this interpreter is. So in this sense it is much simpler.
-
-Furthermore the generation of these instructions is closely aligned to the implementation details of the event recording interpreter.
-
-So there isn't really a problem to tackle in it's full generality. For this reason we only look at a specific example, and in this case based on the recording interpreter above, we consider playing back the event log from a SQL database.
-
-The complexity in playback is more performance related as we may be restoring a considerably large dataset. For this we use FS2.
-
-
-
-
-
-
+One last piece in the event sourcing puzzle is playback. We'll briefly discuss this in a follow up post.
 
 
 
