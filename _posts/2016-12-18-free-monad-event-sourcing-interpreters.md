@@ -184,9 +184,9 @@ An alternative approach that proves to be more fruitful is to create a base trai
 ```scala
 trait EventSourcing {  self : EventInterpreter =>
   // Abstract types
-  type M[_]   // The target monad
   type F[_]   // The command algebra type
   type E      // The event type
+  type M[_]   // The target monad
 
   // Abstract methods
   implicit def encoder : Encoder[E]   // Encoder instance for Json encoding
