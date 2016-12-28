@@ -41,7 +41,7 @@ There are significant problems with this approach.
 
 One of the main purposes of the `Task` monad is to delay the execution of effectful code until the latest possible stage. Any code that has effects should be wrapped in a `Task` object, and the processing of these tasks should happen in the execution of `Task.unsafeRun()`. The code that generates this `Task` object should itself be pure, and have no effects. 
 
-When this practice is adhered to, we can rely on it that any code that is not executed `Task.unsafeRun()` is referentially transparent, and can be much more easily reasoned about. And in particular any code that isn't wrapped doesn't involve `Task` at all, can be assured to be pure. `Task` becomes a containment zone for impure code.
+When this practice is adhered to, we can rely on it that any code that is not executed within `Task.unsafeRun()` is referentially transparent, and can be much more easily reasoned about. And in particular any code that isn't wrapped doesn't involve `Task` at all, can be assured to be pure. `Task` becomes a containment zone for impure code.
 
 The problem here is `publishEvent` is effectful code, and inserting it here violates these principles. 
 
