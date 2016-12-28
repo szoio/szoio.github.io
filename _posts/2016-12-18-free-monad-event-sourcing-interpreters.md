@@ -5,7 +5,7 @@ title: Interpreters for Event Sourcing Free Monads
 date: 2016-12-18
 ---
 
-This post follows from the post on [Free Monads and Event Sourcing Architecture]({% post_url 2016-12-08-free-monads-and-event-sourcing %}). Here we develop a fully generic event sourcing interpreter framework for capturing events from any free algegbra that has correct effect processing semantics. We describe a concrete example instance that uses the [doobie](https://github.com/tpolecat/doobie) library to persist the events to a SQL database. Our implementation is typesafe and performant. 
+This post follows from the post on [Free Monads and Event Sourcing Architecture]({% post_url 2016-12-08-free-monads-and-event-sourcing %}). Here we develop a generic free monad based event sourcing framework that can capture events from any free algegbra and has correct effect processing semantics. We describe a concrete example instance that uses the [doobie](https://github.com/tpolecat/doobie) library to persist the events to a SQL database. Our implementation is typesafe and performant. 
 
 Even though our [implementation so far]({% post_url 2016-12-08-free-monads-and-event-sourcing %}) is vague, it is clearly evident that the approach taken is flawed. We summarise in the section following, restricting to the command side of the equation, and explain the shortcomings.
 
