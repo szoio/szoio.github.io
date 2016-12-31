@@ -1,9 +1,11 @@
 ---
 layout: post
-slug: free-monad-event-sourcing-interpreters
-title: Interpreters for Event Sourcing Free Monads
-date: 2016-12-08
+slug: free-monad-event-sourcing-playback
+title: Free Monad Event Sourcing - Playback
+date: 2016-12-31
 ---
+
+In this post we complete the series on event sourcing with free monads.
 
 Our one final topic is event playback. Playback involves reading from the event store, and creating a program in our free algebra that invokes the commands that have been stored. This then gets intrepreted as usual. A key point here is that the playback mechanism is completely separate from the interpretation, and unlike for recording, where we interleave command instructions with instructions to record these, it doesn't
 need to care what this interpreter is. So in this sense it is much simpler.
