@@ -73,7 +73,7 @@ The first step in the solution is practice what we preach(!), and abstract the p
 ```scala
 sealed trait EventOp[A]
 
-final case class Append(event: E) extends EventOp[Unit]  
+final case class Append(event: E) extends EventOp[Int]  
 ```
 
 Now, instead of interpreting from `F` to `M` directly using our `F ~> M` natural transformation we create another layer `F ~> Free[C, ?]` where `C` is the coproduct of our original algebra `F` and the event logging algebra `EventOp` (note that the natural transformation destination type must be a monad). Then we construct an interpreter from `C ~> M`. Once we have this, it is straightforward to piece these together to get our desired `F ~> M` algebra that is able to process event logging effects.
@@ -142,7 +142,7 @@ If there are any failures, we always prefer the application database to fail bef
 There is one detail that we still need to take care of, and that is the type `E` in
 
 ```scala
-final case class Append(event: E) extends EventOp[Unit]  
+final case class Append(event: E) extends EventOp[Int]  
 ```
 
 In addition we have not yet considered any concrete implementations for the interpreter. We deal with both these below.
@@ -160,7 +160,7 @@ Our first attempt is as follows:
 ```scala
 sealed trait EventOp[E,　A]
 
-final case class Append[E](event: E) extends EventOp[E, Unit]  
+final case class Append[E](event: E) extends EventOp[E, Int]  
 ```
 
 We then propagate this new `EventOp` class through the rest of the stack. This means that each of the object that depend on this additional parameter. For example our coproduct becomes:
@@ -197,7 +197,7 @@ trait EventSourcing {  self : EventInterpreter =>
 
   // Event algebra and single Append instruction
   sealed trait EventOp[A]
-  final case class Append(event : E) extends EventOp[Unit]
+  final case class Append(event : E) extends EventOp[Int]
 
   // Shorthand types
   type C[A]  = Coproduct[F, EventOp, A]
@@ -242,8 +242,7 @@ trait Event2M extends EventSourcing with EventInterpreter {
   // Our implementation of the `e2M` event logging interpreter
   override def e2M(implicit M: Monad[M]): EventOp ~> M = new (EventOp ~> M) {
     override def apply[A](fa: EventOp[A]): M[A] = fa match {
-      case Append(e) =>
-        M.map(append(e).transact(transactor))(_ => ())
+      case Append(e) => append(e).transact(transactor)
     }
   }
 }
