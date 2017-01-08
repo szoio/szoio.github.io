@@ -257,10 +257,8 @@ object Command {
   sealed trait CommandEvent { self: CommandOp[_] => }
 
   // Commands
-  final case class CommandStr(str: String) 
-    extends CommandEvent with CommandOp[Unit]   
-  final case class CommandInt(int: Int) 
-    extends CommandEvent with CommandOp[Boolean]
+  final case class CommandStr(str: String) extends CommandEvent with CommandOp[Unit]   
+  final case class CommandInt(int: Int)    extends CommandEvent with CommandOp[Boolean]
 
   val commandEncoder: Encoder[CommandEvent] = semiauto.deriveEncoder[CommandEvent]
   val commandDecoder: Decoder[CommandEvent] = semiauto.deriveDecoder[CommandEvent]
@@ -287,6 +285,7 @@ Some observations:
 
 * Our command events derive from two traits, `CommandOp[_]` and `CommandEvent`. The reason we require the `CommandEvent` in the first place is the Circe automatic encoder derivation only works for sealed trait families of case classes where the base trait is a concrete type, not a type constructor.
 * We need a mechanism to convert from a `CommandOp` to a `CommandEvent` (and vice versa for playback). The `f2e` method does this. In our implementation we are doing an `asInstanceOf` cast, which is normally considered bad practice, but having these traits requiring each other using `{ self: CommandEvent => }` etc. ensures that this cast will not fail.
+* Instead of using abstract types `type F[_]` etc., we could have made `F[_]`, `M[_]` and `E` type parameters of the `EventSourcing` trait, and the ones that depend on it. This is really a choice of style.
 
 One last piece in the event sourcing puzzle is event playback. We'll briefly discuss this in a follow up post.
 
