@@ -193,7 +193,7 @@ trait EventSourcing {  self : EventInterpreter =>
 
   // Abstract methods
   implicit def encoder : Encoder[E]   // Encoder instance for Json encoding
-  def f2e[A](fa : F[A]) : E           // Convertion from command to event
+  def f2e[A](fa : F[A]) : E           // Conversion from command to event
 
   // Event algebra and single Append instruction
   sealed trait EventOp[A]
@@ -292,7 +292,7 @@ One last piece in the event sourcing puzzle is event playback. We'll briefly dis
 
 ## Acknowledgements
 
-Thanks again to [Marek Kadek](https://github.com/KadekM) for some excellent critical input on [the previous post]({% post_url 2016-12-08-free-monads-and-event-sourcing %}) and valuable ideas and suggestions that helped reach the elegant outcome described above. 
+Thanks again to [Marek Kadek](https://github.com/KadekM) for some excellent critical input on [the previous post]({% post_url 2016-12-08-free-monads-and-event-sourcing %}) and valuable ideas and suggestions that helped reach the elegant solution described above. 
 
 
 

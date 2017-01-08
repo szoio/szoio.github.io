@@ -1,7 +1,7 @@
 ---
 layout: post
 slug: free-monad-event-sourcing-playback
-title: Free Monad Event Sourcing - Playback
+title: Free Monad Event Sourcing - Playback and Wrapup
 date: 2016-12-31
 ---
 
@@ -19,11 +19,55 @@ For playback we have the following requirements:
 
 * Constant memory complexity
 * Linear time complexity 
-* Playback must be in the recorded
+* Playback must be in the order of the recorded
 
 where complexity is in terms of the size of the event log.
 
-For this a stream is a prefect fit. Much of the recording mechanism can be reused. We only need to add some analogous 
+For this a stream is a prefect fit. Much of the recording mechanism can be reused. We only need to add some analogous code to decode and convert back.
+
+```
+trait EventSourcing {
+  // Abstract methods
+  ...
+  ...
+}
+
+
+trait Event2M extends EventSourcing with EventInterpreter {
+  ...
+  def e2f[A](fa : E) : F[A]           // Conversion from event to command
+  def decoder : Decoder[E]
+
+  def playback(transactor: Transactor[M], chunkSize: Int)(f2M: F ~> M)(implicit M: Monad[M]) : Stream[M, M[Unit]] = {
+    val conIOStream : Stream[ConnectionIO, Free[F, Unit]] =
+      spring.marketintel.eventlog.pg.queries.event.streamAll
+        // convert the Json into an event
+        .map { dbEvent => decoder.decodeJson(dbEvent.payload).toOption }
+        // discard events that fail to decode
+        .collect {  case Some(x) => x }
+        // convert the events into operations of type Unit
+        .map { event => Free.liftF[F, Any](e2f(event)).map(_ => ()) }
+
+    val batchedStream : Stream[ConnectionIO, Free[F, List[Unit]]] =
+      conIOStream.chunkLimit(chunkSize)
+        // sequence the chunk to convert to a single Free instance
+        .map(_.toList.sequence[Free[F, ?], Unit])
+
+    // transform stream from ConnectionIOs to Ms
+    val fStreamM : Stream[M, Free[F, List[Unit]]] =
+      transactor.transP(batchedStream)
+
+    // interpret the stream of `Free[F, ?]`s to create a stream of `M`s
+    val mStreamM : Stream[M, M[List[Unit]]] =
+      fStreamM.map(_.foldMap(f2M))
+
+    // simplify the return type to `Unit`
+    mStreamM.map(_.map(_ => ()))
+  }
+
+}
+
+```
 
 
 
