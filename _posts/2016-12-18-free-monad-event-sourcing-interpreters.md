@@ -64,7 +64,7 @@ For various reaons however, there are some cases where we may want to use anothe
 
 In short, we can distill the problem to the following general requirement: 
 
-Given a free algebra `F` representing the command instructions, and natural transformation `F ~> M` to a monad `M`, how do we create an augmented natural transformation `F ~> M` that allows us to capture the events in `F` but only process them when we process `M`? This is what we are going to derive.
+*Given a free algebra `F` representing the command instructions, and natural transformation `F ~> M` to a monad `M`, how do we create an augmented natural transformation `F ~> M` that allows us to capture the events in `F` but only process them when we process `M`?* This is what we are going to derive.
 
 ## Abstracting event logging with free monads
 
@@ -285,7 +285,7 @@ Some observations:
 
 * Our command events derive from two traits, `CommandOp[_]` and `CommandEvent`. The reason we require the `CommandEvent` in the first place is the Circe automatic encoder derivation only works for sealed trait families of case classes where the base trait is a concrete type, not a type constructor.
 * We need a mechanism to convert from a `CommandOp` to a `CommandEvent` (and vice versa for playback). The `f2e` method does this. In our implementation we are doing an `asInstanceOf` cast, which is normally considered bad practice, but having these traits requiring each other using `{ self: CommandEvent => }` etc. ensures that this cast will not fail.
-* Instead of using abstract types `type F[_]` etc., we could have made `F[_]`, `M[_]` and `E` type parameters of the `EventSourcing` trait, and the ones that depend on it. This is really a choice of style.
+* Instead of using abstract types in `type F[_]` etc., we could have made `F[_]`, `M[_]` and `E` type parameters of the `EventSourcing` trait, and the ones that depend on it. This is really a choice of style.
 
 One last piece in the event sourcing puzzle is event playback. We'll briefly discuss this in a follow up post.
 
