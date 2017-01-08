@@ -64,7 +64,9 @@ For various reaons however, there are some cases where we may want to use anothe
 
 In short, we can distill the problem to the following general requirement: 
 
-*Given a free algebra `F` representing the command instructions, and natural transformation `F ~> M` to a monad `M`, how do we create an augmented natural transformation `F ~> M` that allows us to capture the events in `F` but only process them when we process `M`?* This is what we are going to derive.
+Given a free algebra `F` representing the command instructions, and natural transformation `F ~> M` to a monad `M`, how do we create an augmented natural transformation `F ~> M` that allows us to capture the events in `F` but only process them when we process `M`? We are looking for a 
+
+This is what we are going to derive.
 
 ## Abstracting event logging with free monads
 
