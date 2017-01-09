@@ -64,7 +64,7 @@ For various reaons however, there are some cases where we may want to use anothe
 
 In short, we can distill the problem to the following general requirement: 
 
-Given a free algebra `F` representing the command instructions, and natural transformation `F ~> M` to a monad `M`, how do we create an augmented natural transformation `F ~> M` that allows us to intercept the events in `F` but only serialise them when we process `M`?
+Given a free algebra `F` representing the command instructions, and natural transformation `F ~> M` to a monad `M`, how do we create an augmented natural transformation `F ~> M` that allows us to intercept the events in `F` but only process them (i.e. serialise them) when we process `M`?
 
 This is what we are going to derive.
 
