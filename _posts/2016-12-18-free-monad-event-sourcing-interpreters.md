@@ -289,7 +289,7 @@ Some observations:
 * We need a mechanism to convert from a `CommandOp` to a `CommandEvent` (and vice versa for playback). The `f2e` method does this. In our implementation we are doing an `asInstanceOf` cast, which is normally considered bad practice, but having these traits requiring each other using `{ self: CommandEvent => }` etc. ensures that this cast will not fail.
 * Instead of using abstract types in `type F[_]` etc., we could have made `F[_]`, `M[_]` and `E` type parameters of the `EventSourcing` trait, and the ones that depend on it. This is really a choice of style.
 
-One last piece in the event sourcing puzzle is event playback. We'll briefly discuss this in a follow up post. This is covered in [this post]({% post_url 2017-03-30-free-monad-event-sourcing-playback %})
+One last piece in the event sourcing puzzle is event playback. This discussed in the follow-up post on [event sourcing playback using FS2]({% post_url 2017-03-30-free-monad-event-sourcing-playback %}).
 
 ## Acknowledgements
 
