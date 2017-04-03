@@ -62,7 +62,6 @@ trait Event2M extends EventSourcing with EventInterpreter {
 Here we have added a playback method that reads the event log table and returns a `Stream[M, M[Unit]]`. We break this down into steps:
 
 1. Create a `Stream[ConnectionIO, Event]`
-  
   This is entirely a doobie task, using the `process` method to turn the results of a query into a FS2 stream.
 
 2. Transform this stream into a `Stream[ConnectionIO, Free[F, Unit]]`
