@@ -73,7 +73,7 @@ Here we have added a playback method that reads the event log table and returns 
 
 5. Interpret the free monads emitted from the stream to generate a stream of `M`s. Not that the target effect monad appears in both parameters.
 
-Running the stream requires a choice of target monad `M`. In the case of `Task`, we can run it in the natural way using something like
+Running the stream depends on our choice of target monad `M`. In the case of `Task`, we can run it in the natural way using something like
 
 ```scala
 val playbackStream: Stream[Task, Task[Unit]]
