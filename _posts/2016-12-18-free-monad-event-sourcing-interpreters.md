@@ -291,6 +291,8 @@ Some observations:
 
 One last piece in the event sourcing puzzle is event playback. This discussed in the follow-up post on [event sourcing playback using FS2]({% post_url 2017-03-30-free-monad-event-sourcing-playback %}).
 
+Source code is available in the following [gist on Github](https://gist.github.com/szoio/b80a5c5fb8da00be5a2e5fd822b7895e).
+
 ## Acknowledgements
 
 Thanks again to [Marek Kadek](https://github.com/KadekM) for some excellent critical input on [the previous post]({% post_url 2016-12-08-free-monads-and-event-sourcing %}) and valuable ideas and suggestions that helped reach the elegant solution described above. 
