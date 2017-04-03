@@ -149,9 +149,9 @@ final case class Append(event: E) extends EventOp[Int]
 
 In addition we have not yet considered any concrete implementations for the interpreter. We deal with both these below.
 
-What we want `E` to represent is a serialisable form of our command algebra `F`. Using this our events will be serialised and persisted in the event log. These days you need a decent reason to not choose Json as a serialisation format, at least not until you data volume is such that binary serialisation becomes imperative. For Json processing in a FP Scala stack, especially using [Cats](http://typelevel.org/cats/), [Circe](https://circe.github.io/circe/) is a good fit. 
+We want `E` to represent a serialisable form of our command algebra `F`. Using this our events will be serialised and persisted in the event log. These days you need a decent reason to not choose Json as a serialisation format, at least not until you data volume is such that binary serialisation becomes imperative. For Json processing in a FP Scala stack, especially using [Cats](http://typelevel.org/cats/), [Circe](https://circe.github.io/circe/) is a good fit. 
 
-The task of converting to and from Json is handled generically by `Encoder` and `Decoder` type classes. Other Json libraries work in similar ways using type classes of different names. In this case we need a way of passing the `Encoder` typeclass instance to the interpreter. This is not a Json specific requirement - converter typeclasses is the most suitable mechanism for handling encoding into any serialisation format.
+The task of converting to and from Json is handled generically by `Encoder` and `Decoder` type classes. Other Json libraries work in similar ways using type classes of different names. In this case we need a way of passing the `Encoder` typeclass instance to the interpreter. This is not a Json specific requirement - converter typeclasses is the most suitable mechanism for handling encoding into any serialisation format. 
 
 This is all reasonably straightforward to do if we have a single free monad, but what if we have multiple algebras, and we want to several of them to be event sourced, or if we wanted to create an event sourcing library that can capture events from any of our free monad algebras in a generic way?
 
@@ -289,19 +289,9 @@ Some observations:
 * We need a mechanism to convert from a `CommandOp` to a `CommandEvent` (and vice versa for playback). The `f2e` method does this. In our implementation we are doing an `asInstanceOf` cast, which is normally considered bad practice, but having these traits requiring each other using `{ self: CommandEvent => }` etc. ensures that this cast will not fail.
 * Instead of using abstract types in `type F[_]` etc., we could have made `F[_]`, `M[_]` and `E` type parameters of the `EventSourcing` trait, and the ones that depend on it. This is really a choice of style.
 
-One last piece in the event sourcing puzzle is event playback. We'll briefly discuss this in a follow up post.
+One last piece in the event sourcing puzzle is event playback. We'll briefly discuss this in a follow up post. This is covered in [this post]({% post_url 2017-03-30-free-monad-event-sourcing-playback %})
 
 ## Acknowledgements
 
 Thanks again to [Marek Kadek](https://github.com/KadekM) for some excellent critical input on [the previous post]({% post_url 2016-12-08-free-monads-and-event-sourcing %}) and valuable ideas and suggestions that helped reach the elegant solution described above. 
-
-
-
-
-
-
-
-
- 
-
 

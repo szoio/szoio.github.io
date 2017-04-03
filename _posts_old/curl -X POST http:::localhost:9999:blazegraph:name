@@ -1,0 +1,7 @@
+curl -X POST http://localhost:9999/blazegraph/namespace/mi/sparql \
+-H "Accept:application/sparql-results+json" \
+--data-urlencode \
+"
+query=SELECT ?s ?p ?o WHERE { ?s ?p ?o }
+"
+
