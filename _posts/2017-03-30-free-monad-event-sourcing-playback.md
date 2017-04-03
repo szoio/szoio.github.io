@@ -5,9 +5,7 @@ title: Free Monad Event Sourcing - Playback and Wrap-up
 date: 2017-03-30
 ---
 
-In this post, following on from [Free Monad Event Sourcing Interpreters]({% post_url 2016-12-18-free-monad-event-sourcing-interpreters %}), we complete the series on event sourcing with free monads by discussing playback. We demonstrate by example, using the [doobie data access library](https://github.com/tpolecat/doobie) and the [FS2 streaming library](https://github.com/functional-streams-for-scala/fs2) to playback an event log of operations recorded and serialised as Json in a SQL database. 
-
-There isn't that much to say about it, but we've included this post for the sake of completeness. Recording is only half of the story, abeit in this case the more difficult half. If you are not familiar with FS2, it will also serve as a good motivating example for FS2 and its usage.
+In this post, following on from [Free Monad Event Sourcing Interpreters]({% post_url 2016-12-18-free-monad-event-sourcing-interpreters %}), we complete the series on event sourcing with free monads by discussing playback. We demonstrate by example, using the [doobie data access library](https://github.com/tpolecat/doobie) and the [FS2 streaming library](https://github.com/functional-streams-for-scala/fs2) to playback an event log of operations recorded and serialised as Json in a SQL database. There isn't that much to say about it, but we've included this post for the sake of completeness. Recording is only half of the story, abeit in this case the more difficult half. If you are not familiar with FS2, it will also serve as a good motivating example for FS2 and its usage.
 
 Playback involves reading from the event store, and creating a program in our free algebra that invokes the commands that have been stored. This then gets interpreted as usual. A key point here is that the playback mechanism is completely separate from the interpretation, and unlike for recording, where we interleave command instructions with instructions to record these, it doesn't need to care what this interpreter is. So in this sense it is much simpler than recording. 
 
