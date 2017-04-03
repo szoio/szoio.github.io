@@ -1,7 +1,7 @@
 ---
 layout: post
 slug: free-monad-event-sourcing-interpreters
-title: Interpreters for Event Sourcing Free Monads
+title: Interpreters for event sourcing free monads
 date: 2016-12-18
 ---
 

@@ -1,7 +1,7 @@
 ---
 layout: post
 slug: creating-composable-data-pipelines-spark
-title: Composing Spark Data Pipelines
+title: Composing Spark data pipelines
 date: 2016-04-05
 ---
 

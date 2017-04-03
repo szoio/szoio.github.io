@@ -1,7 +1,7 @@
 ---
 layout: post
 slug: bulletproof-functional-validation-using-scalaz
-title: Bulletproof Functional Validation using Scalaz
+title: Bulletproof functional validation using Scalaz
 date: 2016-04-29
 ---
 

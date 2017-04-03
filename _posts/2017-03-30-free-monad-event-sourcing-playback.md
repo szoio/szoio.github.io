@@ -1,7 +1,7 @@
 ---
 layout: post
 slug: free-monad-event-sourcing-playback
-title: Free Monad Event Sourcing - Playback and Wrap-up
+title: Free monad event sourcing - playback and wrap-up
 date: 2017-03-30
 ---
 

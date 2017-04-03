@@ -1,7 +1,7 @@
 ---
 layout: post
 slug: scala-variance-and-blood-groups
-title: Scala Variance and Blood Groups
+title: Scala variance and blood groups
 date: 2016-04-02
 ---
 

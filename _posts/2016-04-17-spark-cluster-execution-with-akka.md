@@ -1,7 +1,7 @@
 ---
 layout: post
 slug: spark-cluster-execution-with-akka
-title: Spark Cluster Execution with Akka
+title: Spark cluster execution with Akka
 date: 2016-04-17
 ---
 

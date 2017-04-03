@@ -1,7 +1,7 @@
 ---
 layout: post
 slug: free-monads-and-event-sourcing
-title: Free monads and Event Sourcing Architecture
+title: Free monads and event sourcing architecture
 date: 2016-12-08
 ---
 
