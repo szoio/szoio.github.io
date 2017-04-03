@@ -76,7 +76,7 @@ Here we have added a playback method that reads the event log table and returns 
 
 Running the stream requires a choice of target monad `M`. In the case of `Task`, we can run it in the natural way using something like.
 
-```
+```scala
 val playbackStream: Stream[Task, Task[Unit]]
 
 playbackStream.map(_.unsafeRun).unsafeRun
