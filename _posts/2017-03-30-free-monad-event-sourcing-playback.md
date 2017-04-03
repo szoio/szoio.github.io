@@ -86,7 +86,7 @@ or one of the "safer" `Task` run variants. Note as usual that this is the only e
 
 If you are using free monads extensively, you may end with free monads at various levels of abstraction in your system. It is obviously not necessary to apply event sourcing to each of them. We only need to record the events at the level with is required to recostitute system state. It makes a lot of sense to apply event sourcing to the free monad at the lowest level of abstraction in your domain model, above any level the level of abstraction concerned directly with data access. Events should have meaning in the domain model rather than reveal or record implementation details of your system, something that would commit you to that implementation. On the other hand, recording events at too high a level of abstraction, the events themselves may end up being quite brittle, and you may miss certain events if this level is bypassed.
 
-This completes the series on Free Monads and event sourcing. I hope after reading this series, you feel inspired to apply this pattern in any of the project you are working on.
+This completes the series on Free Monads and event sourcing. I hope after reading this series, you feel inspired to apply this pattern in any of the projects you are working on.
 
 All of this is available in the following [gist on Github](https://gist.github.com/szoio/b80a5c5fb8da00be5a2e5fd822b7895e).
 
