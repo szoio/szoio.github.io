@@ -9,7 +9,7 @@ In this post, following on from [Free Monad Event Sourcing Interpreters]({% post
 
 Playback involves reading from the event store, and creating a program in our free algebra that invokes the commands that have been stored. This then gets interpreted as usual. A key point here is that the playback mechanism is completely separate from the interpretation, and unlike for recording, where we interleave command instructions with instructions to record these, it doesn't need to care what this interpreter is. So in this sense it is much simpler than recording. 
 
-So there isn't really a problem that can be dealt with in any kind of generality. For this reason we rather consider a specific example. Following on from the recording interpreter presented [before]({% post_url 2016-12-18-free-monad-event-sourcing-interpreters %}), we consider playing back the event log from a SQL database, using [doobie](https://github.com/tpolecat/doobie) for data access.
+Playback is somewhat implementation specific - there isn't really a problem that can be dealt with in any kind of generality. For this reason we rather consider a specific example. Following on from the recording interpreter presented [before]({% post_url 2016-12-18-free-monad-event-sourcing-interpreters %}), we consider playing back the event log from a SQL database, using [doobie](https://github.com/tpolecat/doobie) for data access.
 
 The complexity in playback is mainly performance related, as we may be restoring a considerably large dataset. 
 
