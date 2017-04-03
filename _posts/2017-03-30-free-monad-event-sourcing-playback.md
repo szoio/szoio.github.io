@@ -21,7 +21,7 @@ For playback we have the following requirements:
 
 Here complexity is in terms of the size of the event log.
 
-For this a stream such as that provided by FS2 is a great fit. Actually FS2 is a great fit for many other completely different use cases, and that may be the subject of a future post or two.
+For this a stream such as that provided by [FS2](https://github.com/functional-streams-for-scala/fs2) is a great fit. Actually FS2 is a great fit for many other completely different use cases, and that may be the subject of a future post or two.
 
 In terms of the implementation, it's really quite straightforward, and much of the recording mechanism can be reused. We only need to add some analogous code to decode and convert back from the serialised to the instructions of our original algebra.
 
