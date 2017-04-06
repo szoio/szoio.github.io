@@ -17,21 +17,9 @@ val responseFuture = Http.asyncPost(request)
 val result = Await.result(responseFuture, 30.seconds)
 ```
 
-If we want to result of one request to be fed into the request of another, we'll typically `flatMap` it, so it may look like this.
+`Future`, even though it's monadic, so we can `flatMap` the output from one request into the input of another, is still effectful. By this we mean the act of creating a future, in this case something like `Http.asyncGet(request)`, has an effect, in this case calling some external API.
 
-```scala
-val responseFuture2 = Http.asyncGet(request1).flatMap { result1 =>
-  val request2 = someLogic(result1)
-  Http.asyncPost(request2)
-}
-val result2 = Await.result(responseFuture2, 30.seconds)
-```
-
-Obviously if there's more than a couple of chained requests, we'd map them in a for comprehension.
-
-`Future`, even though it's monadic, is still effectful. By this we mean the act of creating a future, in this case something like `Http.asyncGet(request)`, has an effect, in this case calling some external API.
-
-Simply wrapping this as a `Task`, we can defer this effect, and push it to the boundary of our program, which is where we want it to be. This is really low hanging fruit. If we use FS2's `Task` for example, we can wrap a future in a task with 
+Simply by wrapping this as a `Task`, we can defer this effect, and push it to the boundary of our program, which is where we want it to be. This is really low hanging fruit. If we use FS2's `Task` for example, we can wrap a future in a task with 
 
 ```scala
 def fromFuture[A](fut: => Future[A])
@@ -41,7 +29,7 @@ where the future is only created when the task is executed.
 
 So now we've got this out the way, we can assume our calls to the exchange API can all be considered as methods that return a `Task` rather than a future.
 
-So here's our API.
+So here's our API:
 
 ```scala
 def listTrades(apiKey: ApiKey, code: String): Task[Trades]
@@ -76,15 +64,15 @@ case class ExecutionDetails(trade: Option[Trade], balances: List[Balance])
     for {
       orderId  <- placeOrder(apiKey, code, orderType, volume = volume, price = price)
       order    <- getOrderStatus(orderId, verifyFrequency, verifyAttempts)
-      _        <- if (order.state == "PENDING") stopOrder(apiKey, orderId.id) else Task.now(false)
+      _        <- if (order.state == "COMPLETE") Task.now(false) else stopOrder(apiKey, orderId.id)
       trade    <- getTrade(apiKey, order)
       balances <- getBalances(apiKey)
     } yield ExecutionDetails(trade, balances)
 ```
 
-Our execution method returns an `ExecutionDetails` structure, with an optional `Trade` object if the order was filled, and the new account balances. 
+Our execution method returns an `ExecutionDetails` structure, with an optional `Trade` object that's defined if the order was filled, and the new account balances. 
 
-If you look closely at the above implementation you'll see that we haven't defined the `getOrderStatus` method. This is where FS2 comes it. What we do is we poll the API every so often, until we finally give up. If we give up, we then cancel the order before finishing up and returning. 
+If you look closely at the above implementation you'll see that we haven't defined the `getOrderStatus` method. This is where FS2 comes in. What we do is we poll the API every so often, until we finally give up. If we give up, we then cancel the order before finishing up and returning. 
 
 This is a simple task for FS2. The following code will get the job done. 
 
@@ -93,7 +81,7 @@ def getOrderStatus(orderId: String, verifyFrequency: FiniteDuration, verifyAttem
   fs2.Stream
     .eval(Task.schedule(getOrder(apiKey, orderId)), verifyFrequency)
     .repeat
-    .takeThrough(_.state == "PENDING")
+    .takeThrough(_.state != "COMPLETE")
     .take(verifyAttempts)
     .runLog
     .map(_.last)
@@ -108,10 +96,12 @@ If you know FS2, this code is dead straightforward. If you're not familiar with 
 5. `runLog` "runs" the stream and generates a vector output, and
 6. `last` returns the last element of the vector, an `Order`.
 
-Note that we've put "runs" in quotes, as it doesn't really run the stream, it just transforms the stream into a `Task` that returns a vector when the task is run.
+Note that we've put "runs" in quotes, as it doesn't really run the stream, it just transforms the stream into a `Task` that returns a vector when the task is run. Running the stream is a two stage process.
 
-So this is very simple code - far simpler than the handcrafted imperative equivalent, or some kind of recursive scheme.
+So this is very simple code - far simpler than any handcrafted imperative equivalent, or some kind of recursive scheme.
 
-So now we have our order execution code, and now we want to make some money from it. But hang on a second, we haven't tested it.
+So now we have our order execution code, and now we want to make some money from it. But hang on a second, we haven't tested it, and we can't afford it to fail.
+
+One 
 
 
