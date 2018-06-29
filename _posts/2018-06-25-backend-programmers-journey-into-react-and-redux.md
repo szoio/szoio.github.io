@@ -25,7 +25,7 @@ For those unfamiliar with [higher order components](https://reactjs.org/docs/hig
 * Passing in data from the redux store to a component. In fact the usual redux `connect` function is itself a HOC.
 * Controlling when a component will be rerendered.
 
-Using HOCs, there is no need for data-only components. All react components are presentation components, and the work otherwise done by data-only components is performed by a HOC. State goes away too. A component that needs statefulness can be simply transformed into a component that receives this state. State is immediately turned into props, dispensing with the distinction between them.
+Using HOCs, there is no need for data-only components. All react components can be presentation components, and the work otherwise done by data-only components is performed by a HOC. State goes away too. A component that needs statefulness can be simply transformed into a component that receives this state. State is immediately turned into props, dispensing with the distinction between them.
 As a result react class components are not necessary. All react components can and should be pure functional components of the form `props => <JSX>` (i.e. [dumb as f*ck components](https://github.com/uberVU/react-guide/blob/master/props-vs-state.md#component-types)). Of course there are some exceptions - some stateful components may be helpful for certain use cases like animation. But they are by far the exception.
 
 As an example consider the following simple example, taken from the [react tutorial - handling events](https://reactjs.org/docs/handling-events.html) page.
@@ -89,7 +89,7 @@ Apart from being more succinct, this code results in a better separation of conc
 
 This makes it both very easy to write them, and also easy to understand them if they've been written by others. `compose` HOCs can be written by working backwards, where we write the view component first, and then work backwards to fill in the props that the view requires, or by working forwards where we start with the input props (in the above case there are none) work forwards until we have assembled all the props the view will need.
 
-At the implementation level, each line in the compose leads to a layer in the react component heirarchy. This is something to be aware of, but not something we need to pay too much attention to - I find it better to think of each line as a step in a sequence of prop transformations, in which we add data (e.g. via redux `connect`), transform data, or add state or event handlers.
+At the implementation level, each line in the compose leads to a layer in the react component heirarchy, by creating a new component with the new props or behaviours that wraps the input component as a child. This is something to be aware of for efficiency reasons, but not something we generally need to pay too much attention to - I prefer to think of each line as a step in a sequence of prop transformations, in which we add data (e.g. via redux `connect`), transform data, or add state or event handlers.
 
 For a slightly more involved example, consider and contrast the two following components (also taken from the [react tutorial](https://reactjs.org/docs/lifting-state-up.html) ), and the same example refactored into HOC style.
 
