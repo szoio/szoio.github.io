@@ -1,7 +1,7 @@
 ---
 layout: post
 slug: f2018-06-25-backend-programmers-journey-into-react-and-redux
-title: A Backend developers journer into React and Redux
+title: A backend developers journer into React and Redux
 date: 2018-06-25
 ---
 
