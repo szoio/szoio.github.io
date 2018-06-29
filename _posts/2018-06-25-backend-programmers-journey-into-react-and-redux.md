@@ -1,7 +1,7 @@
 ---
 layout: post
-slug: backend-programmers-journey-into-react-and-redux
-title: React and Redux
+slug: react-and-higher-order-components
+title: React and higher order components for dummies (and backend developers)
 date: 2018-06-25
 ---
 
