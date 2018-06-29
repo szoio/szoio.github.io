@@ -1,7 +1,7 @@
 ---
 layout: post
 slug: react-and-higher-order-components
-title: React and higher order components for dummies (and backend developers)
+title: React, redux and higher order components
 date: 2018-06-25
 ---
 
