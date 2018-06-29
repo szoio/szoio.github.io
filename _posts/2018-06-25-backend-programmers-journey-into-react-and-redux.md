@@ -65,7 +65,7 @@ The `Toggle` class represents a toggle button in a on or off state. This state i
 
 Here is the same example, refactored into HOC style:
 
-```
+```javascript
 const ToggleView = ( { isToggleOn, handleClick } ) => (
   <button onClick={handleClick}>{isToggleOn ? 'ON' : 'OFF'}</button> 
 )
