@@ -137,6 +137,6 @@ Step 4 - Implement the higher order component to add data and behaviours
 
 Working this way, we end up with a view centric architecture, as the component hierarchy defined in Step 2 follows from the UI itself.
 
-HOCs are pitched as an advanced topic, but beginners should not be put off - it's the easiest way to do React for dummies like me. Take the trouble to get to grips with it from the start and save yourself the trouble of having to grapple with the same issues I did.
+HOCs are pitched as an advanced topic, but beginners should not be put off - it's the easiest way to do React for noobs like me. Take the trouble to get to grips with it from the start and save yourself the trouble of having to grapple with the same issues I did.
 
 In a following blog post I may drill deeper into the Redux side of things, and discuss some ideas for how to get the most out of it, and in particular how to get flicker-free UIs that support streaming data updates.
