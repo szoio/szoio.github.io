@@ -5,7 +5,7 @@ title: React, redux and higher order components
 date: 2018-06-25
 ---
 
-In this post I describe my journer as a backend developer getting to grips with front end develoment using the React framework, using Redux for state management, and [higher order components](https://reactjs.org/docs/higher-order-components.html). The outcome is some principles for doing front end development that lead to a good separation of concerns, and make React easier write and understand and more enjoyable to work with.
+In this post I discuss my journey as a backend developer getting to grips with front end develoment using the React framework, using Redux for state management, and [higher order components](https://reactjs.org/docs/higher-order-components.html). The outcome is some principles for doing front end development that lead to a good separation of concerns, and make React easier write and understand and more enjoyable to work with.
 
 Working for a small startup, it happens at times that backend developers are forced to go full stack and get to grips with the frontend. Our front end projects are in React. I found this quite difficult to begin with, having to get up to date with JavaScript and learn quite a few new (for me) frameworks and paradigms. Conceptually it made quite good sense, and the ideas around a virtual dom are really appealing, but there are some key concepts and implementation details I struggled to work with. I wouldn't be surprised if just about every developer new to React has this experience. Among these are:
 * The distinction between props and state
@@ -13,7 +13,7 @@ Working for a small startup, it happens at times that backend developers are for
 * How to effectively separate out presentation and data-only components
 * How to use with Redux and get the most out of it
 
-For me the distinction between props and state is a messy abstraction, full of conceptual clutter, and the cause of [endless cumulative confusion](https://github.com/uberVU/react-guide/blob/master/props-vs-state.md). What if we could just do away with this so called state and have just props? 
+For me the distinction between props and state is a messy abstraction, full of conceptual clutter, and the cause of [endless cumulative confusion](https://github.com/uberVU/react-guide/blob/master/props-vs-state.md). What if we could just do away with this so called "state" and have just props? 
 
 The key epiphany, or rather discovery, was [higher order components](https://reactjs.org/docs/higher-order-components.html) (HOCs), and the [recompose](https://github.com/acdlite/recompose) library, and this transformed my experience. Suddenly eveything fell into place and some principles around a sensible way of working with React emerged. These principles are of course guided by my own opinion on aesthetics. As functional programming enthusiast, I favour immutable data structures; I have a strong prefences for pure functional presentation components, and for the use of props over state. As for the data flow, I like to think of the redux store as the fundamental source of truth, projection of that truth through the filter of the user's navigational choices is what the user sees rendered as a view. User interaction and backend data changes modify the single source of truth via state transition functions (action handlers in Redux terminology). The combination of using higher order components and using Redux in the right way allows the implementation to match this conceptual model of view as a function of state.
 
