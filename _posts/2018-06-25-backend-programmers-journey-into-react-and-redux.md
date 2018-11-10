@@ -13,7 +13,7 @@ Working for a small startup, it happens at times that backend developers are for
 * How to effectively separate out presentation and data-only components
 * How to use with Redux and get the most out of it
 
-For me the distinction between props and state is a messy abstraction, full of conceptual clutter, and the cause of [endless cumulative confusion](https://github.com/uberVU/react-guide/blob/master/props-vs-state.md). What if we could just do away with this so called "state" and have just props? 
+For me the distinction between props and state is a messy abstraction, full of conceptual clutter, and the cause of [endless cumulative confusion](https://github.com/uberVU/react-guide/blob/master/props-vs-state.md). What if we could just do away with this so called "state" and have just props?
 
 The key epiphany, or rather discovery, was [higher order components](https://reactjs.org/docs/higher-order-components.html) (HOCs), and the [recompose](https://github.com/acdlite/recompose) library, and this transformed my experience. Suddenly eveything fell into place and some principles around a sensible way of working with React emerged. These principles are of course guided by my own opinion on aesthetics. As functional programming enthusiast, I favour immutable data structures; I have a strong prefences for pure functional presentation components, and for the use of props over state. As for the data flow, I like to think of the redux store as the fundamental source of truth, projection of that truth through the filter of the user's navigational choices is what the user sees rendered as a view. User interaction and backend data changes modify the single source of truth via state transition functions (action handlers in Redux terminology). The combination of using higher order components and using Redux in the right way allows the implementation to match this conceptual model of view as a function of state.
 
@@ -67,7 +67,7 @@ Here is the same example, refactored into HOC style:
 
 ```javascript
 const ToggleView = ( { isToggleOn, handleClick } ) => (
-  <button onClick={handleClick}>{isToggleOn ? 'ON' : 'OFF'}</button> 
+  <button onClick={handleClick}>{isToggleOn ? 'ON' : 'OFF'}</button>
 )
 
 const Toggle = Recompose.compose(
@@ -76,7 +76,7 @@ const Toggle = Recompose.compose(
     handleClick: ( { isToggleOn, setToggleOn } ) => () => setToggleOn( !isToggleOn )
   } )
 )(ToggleView)
- 
+
 ReactDOM.render(
   <Toggle />,
   document.getElementById('root')
@@ -85,7 +85,7 @@ ReactDOM.render(
 
 Writing a component in HOC style is typically involves creating a view as a functions `( props ) => ( <JSX> )`, and a `compose` HOC with a sequence of HOCs that define and transform the props that are passed in to the view.
 
-Apart from being more succinct, this code results in a better separation of concerns. The rendering code has been contained to a single stand-alone function, and the data and logic is all within the `compose` HOC. However perhaps the biggest benefit of this approach is that when encountering a `compose` function, we can typically reason about it in a very linear, sequential way. 
+Apart from being more succinct, this code results in a better separation of concerns. The rendering code has been contained to a single stand-alone function, and the data and logic is all within the `compose` HOC. However perhaps the biggest benefit of this approach is that when encountering a `compose` function, we can typically reason about it in a very linear, sequential way.
 
 This makes it both very easy to write them, and also easy to understand them if they've been written by others. `compose` HOCs can be written by working backwards, where we write the view component first, and then work backwards to fill in the props that the view requires, or by working forwards where we start with the input props (in the above case there are none) work forwards until we have assembled all the props the view will need.
 
@@ -93,7 +93,7 @@ At the implementation level, each line in the compose leads to a layer in the re
 
 For a slightly more involved example, consider and contrast the two following components (also taken from the [react tutorial](https://reactjs.org/docs/lifting-state-up.html) ), and the same example refactored into HOC style.
 
-* [Origial react](https://codepen.io/gaearon/pen/WZpxpz?editors=0010)
+* [Original react](https://codepen.io/gaearon/pen/WZpxpz?editors=0010)
 * [HOC style](https://codepen.io/szoio/pen/ERdxrz?editors=0010)
 
 The benefits of bering about to reason sequentially about your dynamic components is perhaps not totally evident from the toy examples given above, but it becomes drastically apparent for larger, more complex components, as the length of traversals your eyes have to scroll through scales linearly rather than quadratically with the complextiy of a component.
@@ -116,12 +116,12 @@ Summary of the key ideas of React development in a functional way, with Redux st
 1. Only the top level component needs a `connect` function to read from the redux store. All it's descendents receive the redux store data they need as props, and don't need to connect to the store for this. Parents also should pass `dispatch` as props to a child if the child or any of its descendants need to publish actions to the redux store.
 1. Presentation components do not need to do any manipulation / transformation of their props. They are given the props they need exactly as they need them.
 1. Parent components are not responsible for these transformation either. These transformations are handled by HOCs.
-1. Components ***can*** dispatch actions to the redux store directly (via event handlers). This is why the data flow is circular. They don't need to bubble the events up to the top level. 
-1. Event handlers are injected into presentation components via higher order components. 
+1. Components ***can*** dispatch actions to the redux store directly (via event handlers). This is why the data flow is circular. They don't need to bubble the events up to the top level.
+1. Event handlers are injected into presentation components via higher order components.
 1. These event handler HOCs can live close to the presentation component unless it needs to be shared (e.g. if makes sense to define an event handler for a form near the form, maybe in the same source file, if nobody else needs it). Shared HOCs can be factored out.
 1. Remove the references to React completely from all but presentation code. So everything else is just pure Javascript.
 
-How to start building React components in this way? Here is one way of going about it. 
+How to start building React components in this way? Here is one way of going about it.
 
 We start with steps 1 - 3 in https://reactjs.org/docs/thinking-in-react.html
 
