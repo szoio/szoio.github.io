@@ -4,7 +4,7 @@ title: About
 permalink: /about/
 ---
 
-I am a software and data engineer based in Auckland, New Zealand. I work at [Spring](http://spring.nz/), a business development consultancy.
+I am a software and data engineer based in Melboune, Australia. I work at [Simple Machines](http://www.simplemachines.com.au/), a technology consultancy.
 
 ### This Blog
 
