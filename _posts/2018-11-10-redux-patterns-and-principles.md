@@ -119,6 +119,6 @@ test( 'immutable update', () => {
 }
 ```
 *Note that the Jest operator [`toBe`](https://jest-bot.github.io/jest/docs/expect.html#tobevalue) uses the [`Object.is`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/is)
-operator for comparisons.
+operator for comparisons.*
 
 An embarrassingly ugly implementation of this function, that uses [deep-equal](https://github.com/substack/node-deep-equal) for object comparisons, is available [in this Gist](https://gist.github.com/szoio/c2d26c6a8ddac508bb4eb8ea1e5974d7).
