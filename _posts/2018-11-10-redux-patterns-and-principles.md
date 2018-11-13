@@ -9,7 +9,12 @@ In this blog we look at how to use Redux effectively in a React App. The unidire
 in the Redux pattern is helpful in simplifying the reasoning around a UI App. However the benefits are
 frequently discarded by not using Redux effectively, and result a compromised user experience or performance and/or the need for complex workarounds. We discuss how to use the Redux effectively to avoid common pitfalls, and delivery a responsive, flicker-free user experience with minimal spinners.
 
-The fundamental issue revolves around data validity and refreshes. A strategy is required to manage this effectively.
+Much of the complexity in a front end application, revolves around fetching data from the backend. This is not something that is
+discussed frequently, it is almost accepted as a given that this is complexity that simply needs to be managed. However with some 
+thought and planning, it turns out that a lot of this complexity can be localised, contained, or abstracted away, leaving the front end 
+developer to get on with the job of making it look fantastic.
+
+The biggest issue revolves around data validity and refreshes. A strategy is required to manage this effectively.
 Data in a React app is generally loaded on demand by calling into a backend webservice.
 This is done when entering a page for the first time. This is generally handled by fetching the data,
 and giving some user feedback that some loading is occurring. Often something like a spinner is displayed in the meantime.
@@ -47,13 +52,46 @@ This reduces the redux store to a flat, relatively normalised graph-like structu
 For example, consider a simple social media domain model, consisting of users and groups. The redux store may consist of:
 
 * Users. Map of user details objects, keyed by user ID
-* Friends. This is a map of user ID to a list of user IDs.
-* Groups. Map of group details objects, keyed by group ID.
-* Group memberships. Map of group ID to a list of user IDs.
+* Friends. This is a map of user ID to a list of user IDs
+* Groups. Map of group details objects, keyed by group ID
+* Group memberships. Map of group ID to a list of user IDs
+* Auth info. A singleton object consisting of the user ID of the currently logged in user, and an auth token.
+
+For this simple domain model, here is an example:
 
 ```JavaScript
-{a: }
+{ 
+    auth: {
+        data: { user: 1, token: 'token' }
+        invalid: false
+    },
+    users: {
+        data: {
+            1: { userId: 1, name: 'Alice', email: 'alice@alice.com' }
+            2: { userId: 2, name: 'Bob'  email: 'bob@bob.com' }
+        },
+        invalid: [ 2 ]
+    },
+    groups: {
+        details: {
+            data: {
+                101: { groupId: 101, name: 'Chess' }
+                102: { groupId: 102, name: 'Boxing' }
+            }
+            invalid: [ 101 ]
+        }
+        members: {
+            data: {
+                1: [ 101 ]
+                2: [  101, 102 ]
+            }
+            invalid: [ 1 ]
+        } 
+    }
+}
 ```
+
+
 
 Note that the question may arise about how to represent reflexive relationships. E.g. for group memberships we could store:
 
@@ -71,20 +109,68 @@ Further to this, from this observation is that any subset of the redux store dat
 * A *valid data* projection, which is the the available data with all data flagged as invalid filtered output
 * An *all data* projection, in which we don't take notice of the invalid flag.
 
+These would be the projections of our data store:
+
+All data
+
+```JavaScript
+{ 
+    auth: {
+        user: 1, token: 'token'
+    },
+    users: {
+        1: { userId: 1, name: 'Alice', email: 'alice@alice.com' }
+        2: { userId: 2, name: 'Bob'  email: 'bob@bob.com' }
+    },
+    groups: {
+        details: {
+            101: { groupId: 101, name: 'Chess' }
+            102: { groupId: 102, name: 'Boxing' }
+        }
+        members: {
+            1: [ 101 ]
+            2: [  101, 102 ]
+        } 
+    }
+}
+```
+
+Valid data
+
+```JavaScript
+{ 
+    auth: {
+        data: { user: 1, token: 'token' }
+    },
+    users: {
+        1: { userId: 1, name: 'Alice', email: 'alice@alice.com' }
+    },
+    groups: {
+        details: {
+            102: { groupId: 102, name: 'Boxing' }
+        }
+        members: {
+            2: [  101, 102 ]
+        } 
+    }
+}
+```
+
 So we never need to expose the the data with any flags, we simply pass the *valid data* to the data fetcher, and *all data* to the renderer.
+
 
 Finally, we consider when rendering needs to take place. It should be as simple as selecting a subset of the redux store, and rendering when this data changes. This is in the `shouldComponentUpdate` lifecycling method. But what does it mean when the data changes? JavaScript doesn't by default do deep comparisons. We could use one of the 3rd party tools available, or roll our own to do it. But a better option is to do a small amount of extra work in the reducer.
 
 So the final Redux principle is the concept of maintaining refrence equality. This means that on any update to the redux store, the reducer checks that if an object has changed, and never overwrites any object in the redux store that hasn't changed. If our reducers can offer this guarantee, we can propagate this guarantee right through the component heirarchy. It means we can trivially make all our components
 [Pure components](https://reactjs.org/docs/react-api.html#reactpurecomponent). This is a substantial performance enhancement. The price to pay for this is the reducer has to do a little extra work. This work only has to be done once, whereas the `shouldComponentUpdate` is generally called orders of magnitude more often than the work performed by reducers.
 
-To get this all to work we're going to need some boiler plate. First is an immutable update function, which we call `immutableUpdate`. This function takes `start` and a `change` objects as input. This is kind of an enhanced version of `Object.assign`, with behaviour similar to `Object.assign({}, start, change)`, that will replace the merge the `start` and `change` objects, with the `change` object getting precedence.
+To get this all to work we're going to need some boiler plate. First is an immutable update function, which we call `immutableUpdate`. This function takes `start` and a `change` objects as input. This is kind of an enhanced version of `Object.assign`, with behaviour similar to `Object.assign({}, start, change)`, that will merge the `start` and `change` objects, with the `change` object getting preference.
 
-However it also preserves reference equality wherever possible.
+However it also perserves object instances, of both outer and inner objects, so preserving reference equality wherever possible.
 
 To do it have the following additional properties:
 * If `start` and `change` coincide (in terms of deep equality) `start` is returned as is
-* If there is any discrepancy between `start` and `change`, a new object is returned. But reference equality is preserved for all portions of `start` that are which coincide with start
+* If there is any discrepancy between `start` and `change`, a new object is returned. But reference equality is preserved for all portions of `start` where there is no conflict
 * The input arguments are never modified
 
 To make this clear, we expect, for example, the following [Jest](https://jestjs.io) test to pass:
@@ -122,3 +208,5 @@ test( 'immutable update', () => {
 operator for comparisons.
 
 An embarrassingly ugly implementation of this function, that uses [deep-equal](https://github.com/substack/node-deep-equal) for object comparisons, is available [in this Gist](https://gist.github.com/szoio/c2d26c6a8ddac508bb4eb8ea1e5974d7).
+
+Now we can express our store state in terms of reducers
