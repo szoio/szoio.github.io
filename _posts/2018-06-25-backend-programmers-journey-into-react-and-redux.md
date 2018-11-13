@@ -5,7 +5,7 @@ title: React, redux and higher order components
 date: 2018-06-25
 ---
 
-In this post I discuss my journey as a backend developer getting to grips with front end develoment using the React framework, using Redux for state management, and [higher order components](https://reactjs.org/docs/higher-order-components.html). The outcome is some principles for doing front end development that lead to a good separation of concerns, and make React easier write and understand and more enjoyable to work with.
+In this post I discuss my journey as a backend developer getting to grips with front end development using the React framework, using Redux for state management, and [higher order components](https://reactjs.org/docs/higher-order-components.html). The outcome is some principles for doing front end development that lead to a good separation of concerns, and make React easier write and understand and more enjoyable to work with.
 
 Working for a small startup, it happens at times that backend developers are forced to go full stack and get to grips with the frontend. Our front end projects are in React. I found this quite difficult to begin with, having to get up to date with JavaScript and learn quite a few new (for me) frameworks and paradigms. Conceptually it made quite good sense, and the ideas around a virtual dom are really appealing, but there are some key concepts and implementation details I struggled to work with. I wouldn't be surprised if just about every developer new to React has this experience. Among these are:
 * The distinction between props and state

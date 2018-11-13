@@ -1,6 +1,6 @@
 ---
 layout: post
-slug: react-and-higher-order-components
+slug: redux-patterns-and-principles
 title: Redux patterns and principles
 date: 2018-11-10
 ---
