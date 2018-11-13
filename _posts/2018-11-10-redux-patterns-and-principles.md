@@ -10,8 +10,8 @@ in the Redux pattern is helpful in simplifying the reasoning around a UI App. Ho
 frequently discarded by not using Redux effectively, and result a compromised user experience or performance and/or the need for complex workarounds. We discuss how to use the Redux effectively to avoid common pitfalls, and delivery a responsive, flicker-free user experience with minimal spinners.
 
 Much of the complexity in a front end application, revolves around fetching data from the backend. This is not something that is
-discussed frequently, it is almost accepted as a given that this is complexity that simply needs to be managed. However with some 
-thought and planning, it turns out that a lot of this complexity can be localised, contained, or abstracted away, leaving the front end 
+discussed frequently, it is almost accepted as a given that this is complexity that simply needs to be managed. However with some
+thought and planning, it turns out that a lot of this complexity can be localised, contained, or abstracted away, leaving the front end
 developer to get on with the job of making it look fantastic.
 
 The biggest issue revolves around data validity and refreshes. A strategy is required to manage this effectively.
@@ -60,7 +60,7 @@ For example, consider a simple social media domain model, consisting of users an
 For this simple domain model, here is an example:
 
 ```JavaScript
-{ 
+{
     auth: {
         data: { user: 1, token: 'token' }
         invalid: false
@@ -86,12 +86,10 @@ For this simple domain model, here is an example:
                 2: [  101, 102 ]
             }
             invalid: [ 1 ]
-        } 
+        }
     }
 }
 ```
-
-
 
 Note that the question may arise about how to represent reflexive relationships. E.g. for group memberships we could store:
 
@@ -111,10 +109,10 @@ Further to this, from this observation is that any subset of the redux store dat
 
 These would be the projections of our data store:
 
-All data
+###### All data
 
 ```JavaScript
-{ 
+{
     auth: {
         user: 1, token: 'token'
     },
@@ -130,15 +128,15 @@ All data
         members: {
             1: [ 101 ]
             2: [  101, 102 ]
-        } 
+        }
     }
 }
 ```
 
-Valid data
+###### Valid data
 
 ```JavaScript
-{ 
+{
     auth: {
         data: { user: 1, token: 'token' }
     },
@@ -151,18 +149,20 @@ Valid data
         }
         members: {
             2: [  101, 102 ]
-        } 
+        }
     }
 }
 ```
 
-So we never need to expose the the data with any flags, we simply pass the *valid data* to the data fetcher, and *all data* to the renderer.
-
+So beyond a certain point, we never need to expose the data with any flags, we simply pass the *valid data* to the data fetcher, and *all data* to the renderer.
 
 Finally, we consider when rendering needs to take place. It should be as simple as selecting a subset of the redux store, and rendering when this data changes. This is in the `shouldComponentUpdate` lifecycling method. But what does it mean when the data changes? JavaScript doesn't by default do deep comparisons. We could use one of the 3rd party tools available, or roll our own to do it. But a better option is to do a small amount of extra work in the reducer.
 
-So the final Redux principle is the concept of maintaining refrence equality. This means that on any update to the redux store, the reducer checks that if an object has changed, and never overwrites any object in the redux store that hasn't changed. If our reducers can offer this guarantee, we can propagate this guarantee right through the component heirarchy. It means we can trivially make all our components
+So the final Redux principle is the concept of maintaining reference equality. This means that on any update to the redux store, the reducer checks that if an object has changed, and never overwrites any object in the redux store that hasn't changed. If our reducers can offer this guarantee, we can propagate this guarantee right through the component heirarchy. It means we can trivially make all our components
 [Pure components](https://reactjs.org/docs/react-api.html#reactpurecomponent). This is a substantial performance enhancement. The price to pay for this is the reducer has to do a little extra work. This work only has to be done once, whereas the `shouldComponentUpdate` is generally called orders of magnitude more often than the work performed by reducers.
+
+In a previous article, I advocated for a style of react development involving higher order components. This compositional style is well
+suited to realising these performance optimisations.
 
 To get this all to work we're going to need some boiler plate. First is an immutable update function, which we call `immutableUpdate`. This function takes `start` and a `change` objects as input. This is kind of an enhanced version of `Object.assign`, with behaviour similar to `Object.assign({}, start, change)`, that will merge the `start` and `change` objects, with the `change` object getting preference.
 
@@ -209,4 +209,52 @@ operator for comparisons.*
 
 An embarrassingly ugly implementation of this function, that uses [deep-equal](https://github.com/substack/node-deep-equal) for object comparisons, is available [in this Gist](https://gist.github.com/szoio/c2d26c6a8ddac508bb4eb8ea1e5974d7).
 
-Now we can express our store state in terms of reducers
+Then all reducers take advantage of this `immutableUpdate` in their implementation.
+
+Then for the typical component we have the following steps:
+
+1. Connect to redux store
+1. Select the subset of the data store we are interested in with our `selector` function.
+
+    This function must only pick select existing objects, and not create any new objects.
+1. Call `shouldUpdate` to test data for shallow equals
+1. Split the data into the "valid" and the "all" projections.
+1. If "valid" data is incomplete, fetch more data.
+1. If there is an error, display some sort of error message.
+1. If "all" data is incomplete, display a spinner.
+1. If "all" data is complete, render it.
+
+Here's what it might look like in Recompose based pseudocode.
+
+```JavaScript
+export default compose(
+    connect( ( state ) => ( {
+        selectedData: selector( state ),
+    } ), dispatch => ( { dispatch } ) ),
+    shouldUpdate( ( props, nextProps ) =>
+        !shallowEqual( props.__selectedData, nextProps.__selectedData ) ),
+    // everything from here down will only happen when data data change
+    withProps( ( { selectedData } ) => ( { validAndAll: resolveValidData( selectedData ) } ) ),
+    withProps( ( { validAndAll } ) => ( { validAndAll: { allData, validData } } ) ),
+    fetchMissingData( validData ),
+    transformAndAddHandlers( allData ))( PureViewComponent )
+```
+
+`resolveValidData` is a function that splits `selectedData` into `{ allData, validData }` as discussed before.
+
+The key point is in `shouldUpdate` we do a shallow comparison of our `selectedData`, and if it's equal, we don't go any further.
+This is a very effective optimisation that should offer significant performance benefits.
+
+Of course there's a lot going on there, and in particular, `fetchMissingData` can be
+be very involved. But it is possible to do this in a generic way so we only have to write this code once. Perhaps that's worth a post on it's own at some point.
+
+But we don't give away all the secret sauce here - there's too much going on for that!
+
+To summarise -here are the key points:
+
+1. Never throw away any data in the Redux store unless we know exactly what to replace it with. Instead we flag it as invalid.
+2. Strive for a flat, normalised data graphical state store data structure, with all data uniquely represented
+3. Recognise that there are essentially 2 projections of the redux store, the valid data, needed for the data fetcher, and everything else. Let the view be eventually consistent
+4. Never throw away or replace any data in the state store that hasn't changed. Preserve reference equality and make your components pure
+
+I hope these ideas are somewhat helpful, and at least help get some thought and planning going into how to simplify data flows in React applications.
