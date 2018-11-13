@@ -158,7 +158,7 @@ So beyond a certain point, we never need to expose the data with any flags, we s
 
 Finally, we consider when rendering needs to take place. It should be as simple as selecting a subset of the redux store, and rendering when this data changes. This is in the `shouldComponentUpdate` lifecycling method. But what does it mean when the data changes? JavaScript doesn't by default do deep comparisons. We could use one of the 3rd party tools available, or roll our own to do it. But a better option is to do a small amount of extra work in the reducer.
 
-So the final Redux principle is the concept of maintaining reference equality. This means that on any update to the redux store, the reducer checks that if an object has changed, and never overwrites any object in the redux store that hasn't changed. If our reducers can offer this guarantee, we can propagate this guarantee right through the component heirarchy. It means we can trivially make all our components
+So the final Redux principle is the concept of *maintaining reference equality*. This means that on any update to the redux store, the reducer checks that if an object has changed, and never overwrites any object in the redux store that hasn't changed. If our reducers can offer this guarantee, we can propagate this guarantee right through the component heirarchy. It means we can trivially make all our components
 [Pure components](https://reactjs.org/docs/react-api.html#reactpurecomponent). This is a substantial performance enhancement. The price to pay for this is the reducer has to do a little extra work. This work only has to be done once, whereas the `shouldComponentUpdate` is generally called orders of magnitude more often than the work performed by reducers.
 
 In a previous article, I advocated for a style of react development involving higher order components. This compositional style is well
@@ -218,13 +218,13 @@ Then for the typical component we have the following steps:
 
     This function must only pick select existing objects, and not create any new objects.
 1. Call `shouldUpdate` to test data for shallow equals
-1. Split the data into the "valid" and the "all" projections.
-1. If "valid" data is incomplete, fetch more data.
-1. If there is an error, display some sort of error message.
-1. If "all" data is incomplete, display a spinner.
-1. If "all" data is complete, render it.
+1. Split the data into the "valid" and the "all" projections
+1. If "valid" data is incomplete, fetch more data
+1. If there is an error, display some sort of error message
+1. If "all" data is incomplete, display a spinner. Note this only happens first time round
+1. If "all" data is complete, render it
 
-Here's what it might look like in Recompose based pseudocode.
+Here's what it might look like in Recompose based pseudocode:
 
 ```javascript
 export default compose(
