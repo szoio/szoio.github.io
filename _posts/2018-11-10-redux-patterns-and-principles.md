@@ -1,7 +1,7 @@
 ---
 layout: post
 slug: react-and-higher-order-components
-title: React patterns and principles
+title: Redux patterns and principles
 date: 2018-11-10
 ---
 
@@ -59,7 +59,7 @@ For example, consider a simple social media domain model, consisting of users an
 
 For this simple domain model, here is an example:
 
-```JavaScript
+```javascript
 {
     auth: {
         data: { user: 1, token: 'token' }
@@ -111,7 +111,7 @@ These would be the projections of our data store:
 
 ###### All data
 
-```JavaScript
+```javascript
 {
     auth: {
         user: 1, token: 'token'
@@ -135,7 +135,7 @@ These would be the projections of our data store:
 
 ###### Valid data
 
-```JavaScript
+```javascript
 {
     auth: {
         data: { user: 1, token: 'token' }
@@ -175,7 +175,7 @@ To do it have the following additional properties:
 
 To make this clear, we expect, for example, the following [Jest](https://jestjs.io) test to pass:
 
-```JavaScript
+```javascript
 test( 'immutable update', () => {
     const ghi = { g: { h: 'i' } }
     const start = {
@@ -226,7 +226,7 @@ Then for the typical component we have the following steps:
 
 Here's what it might look like in Recompose based pseudocode.
 
-```JavaScript
+```javascript
 export default compose(
     connect( ( state ) => ( {
         selectedData: selector( state ),
