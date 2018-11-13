@@ -234,10 +234,10 @@ export default compose(
     shouldUpdate( ( props, nextProps ) =>
         !shallowEqual( props.__selectedData, nextProps.__selectedData ) ),
     // everything from here down will only happen when data data change
-    withProps( ( { selectedData } ) => ( { validAndAll: resolveValidData( selectedData ) } ) ),
-    withProps( ( { validAndAll } ) => ( { validAndAll: { allData, validData } } ) ),
-    fetchMissingData( validData ),
-    transformAndAddHandlers( allData ))( PureViewComponent )
+    withProps( ( { selectedData } ) => ( {
+      splitData: resolveValidData( selectedData ) } ) ),
+    fetchMissingData( splitData.validData ),
+    transformAndAddHandlers( splitData.allData ))( PureViewComponent )
 ```
 
 `resolveValidData` is a function that splits `selectedData` into `{ allData, validData }` as discussed before.
