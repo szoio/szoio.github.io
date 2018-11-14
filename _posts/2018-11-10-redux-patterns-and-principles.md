@@ -257,7 +257,7 @@ To summarise -here are the key points:
 
 1. Never throw away any data in the Redux store unless we know exactly what to replace it with. Instead we flag it as invalid.
 2. Strive for a flat, normalised, graphical state store structure, with all data uniquely represented.
-3. Recognise that there are essentially 2 projections of the redux store, the valid data, needed for the data fetcher, and everything else. Let the view be eventually consistent.
+3. Recognise that there are essentially 2 projections of the redux store, the data we know as valid, needed for the data fetcher, and the data that may or may not be valid, that gets propagate to all the renderers.
 4. Never throw away or replace any data in the state store that hasn't changed. Preserve reference equality and make your components pure.
 
 I hope these ideas are somewhat helpful, and at least help get some thought and planning going into how to simplify data flows in React applications.
