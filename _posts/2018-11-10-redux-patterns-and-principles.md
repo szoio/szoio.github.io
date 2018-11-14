@@ -138,7 +138,7 @@ These would be the projections of our data store:
 ```javascript
 {
     auth: {
-        data: { user: 1, token: 'token' }
+        user: 1, token: 'token'
     },
     users: {
         1: { userId: 1, name: 'Alice', email: 'alice@alice.com' }
@@ -155,6 +155,8 @@ These would be the projections of our data store:
 ```
 
 So beyond a certain point, we never need to expose the data with any flags, we simply pass the *valid data* to the data fetcher, and *all data* to the renderer.
+
+Regarding actions, we have actions of two distinct types: *Update* actions, and *invalidate* actions. These actions affect mutually exclusive items in the data store.
 
 Finally, we consider when rendering needs to take place. It should be as simple as selecting a subset of the redux store, and rendering when this data changes. This is in the `shouldComponentUpdate` lifecycling method. But what does it mean when the data changes? JavaScript doesn't by default do deep comparisons. We could use one of the 3rd party tools available, or roll our own to do it. But a better option is to do a small amount of extra work in the reducer.
 
@@ -185,7 +187,8 @@ test( 'immutable update', () => {
         f: ghi
     }
 
-    // if we update the original content with the existing content for any key, the original object is kept
+    // if we update the original content with the existing content for any key,
+    // the original object is kept
     expect( immutableUpdate( start, { a: 1 } ) === start ).toBe( true )
     expect( immutableUpdate( start, { b: { c: 2, d: 3 } } ) === start ).toBe( true )
     expect( immutableUpdate( start, { a: 1, b: { c: 2, d: 3 } } ) === start ).toBe( true )
@@ -213,16 +216,16 @@ Then all reducers take advantage of this `immutableUpdate` in their implementati
 
 Then for the typical component we have the following steps:
 
-1. Connect to redux store
+1. Connect to redux store.
 1. Select the subset of the data store we are interested in with our `selector` function.
 
     This function must only pick select existing objects, and not create any new objects.
-1. Call `shouldUpdate` to test data for shallow equals
-1. Split the data into the "valid" and the "all" projections
-1. If "valid" data is incomplete, fetch more data
-1. If there is an error, display some sort of error message
-1. If "all" data is incomplete, display a spinner. Note this only happens first time round
-1. If "all" data is complete, render it
+1. Call `shouldUpdate` to test data for shallow equals.
+1. Split the data into the "valid" and the "all" projections.
+1. If "valid" data is incomplete, fetch more data.
+1. If there is an error, display some sort of error message.
+1. If "all" data is incomplete, display a spinner. Note this only happens first time round.
+1. If "all" data is complete, render it.
 
 Here's what it might look like in Recompose based pseudocode:
 
@@ -233,7 +236,7 @@ export default compose(
     } ), dispatch => ( { dispatch } ) ),
     shouldUpdate( ( props, nextProps ) =>
         !shallowEqual( props.__selectedData, nextProps.__selectedData ) ),
-    // everything from here down will only happen when data data change
+    // everything from here down will only happen when data changes
     withProps( ( { selectedData } ) => ( {
       splitData: resolveValidData( selectedData ) } ) ),
     fetchMissingData( splitData.validData ),
@@ -248,13 +251,13 @@ This is a very effective optimisation that should offer significant performance 
 Of course there's a lot going on there, and in particular, `fetchMissingData` can be
 be very involved. But it is possible to do this in a generic way so we only have to write this code once. Perhaps that's worth a post on it's own at some point.
 
-But we don't give away all the secret sauce here - there's too much going on for that!
+But we don't give away all the secret sauce here - there's too much going on for that! Specifically we haven't looked into the detailed structure of the reducers and the actions setup.
 
 To summarise -here are the key points:
 
 1. Never throw away any data in the Redux store unless we know exactly what to replace it with. Instead we flag it as invalid.
-2. Strive for a flat, normalised data graphical state store data structure, with all data uniquely represented
-3. Recognise that there are essentially 2 projections of the redux store, the valid data, needed for the data fetcher, and everything else. Let the view be eventually consistent
-4. Never throw away or replace any data in the state store that hasn't changed. Preserve reference equality and make your components pure
+2. Strive for a flat, normalised, graphical state store structure, with all data uniquely represented.
+3. Recognise that there are essentially 2 projections of the redux store, the valid data, needed for the data fetcher, and everything else. Let the view be eventually consistent.
+4. Never throw away or replace any data in the state store that hasn't changed. Preserve reference equality and make your components pure.
 
 I hope these ideas are somewhat helpful, and at least help get some thought and planning going into how to simplify data flows in React applications.
