@@ -10,3 +10,4 @@ Gemfile.lock
 node_modules
 package.json
 project.sublime-workspace
+.idea/
