@@ -9,7 +9,7 @@ In this post we discuss [Kubernetes](https://kubernetes.io/) and its emergence a
 [*operators*](https://coreos.com/blog/introducing-operators.html), which are a pattern for extending the Kubernetes to manage arbitrary custom resources
 and how they enable infrastructure management of complex hybrid environments. We look at how to implement 
 operators in a robust, generic way for any resource that itself has a management API consisting 
-of *CRUD* (create, read, update and delete) operations, and introduce a library created enable this.
+of *CRUD* (create, read, update and delete) operations, and introduce a library created to enable this.
 
 I consider myself primarily a backend and data engineer, and have over time also picked up a bit of front end and mobile experience, specifically in [React](https://www.stephenzoio.com/react-and-higher-order-components/).
 Over time there has been a trend to a *"build it, run it, own it"* way of thinking in which developers also have greater operational 
