@@ -14,7 +14,7 @@ of *CRUD* (create, read, update and delete) operations, and introduce a library 
 
 I consider myself primarily a backend and data engineer, and have over time also picked up a bit of front end and mobile experience, specifically in [React](https://www.stephenzoio.com/react-and-higher-order-components/).
 Over time there has been a trend to a *"build it, run it, own it"* way of thinking in which developers also have greater operational 
-responsibilities, rather than just throwing code over the wall for ops people to pick up. 
+responsibilities, rather than just throwing code over the fence for ops people to pick up. 
 As part of this, "full stack" expands to include devops, in which infrastructure is defined and provisioned in code. 
 Naturally it was only a question of time before an infrastructure tool arrived that developers would take to, 
 and for me Kubernetes is the first such framework or platform.
