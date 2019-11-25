@@ -101,12 +101,14 @@ especially when dealing with real world use cases with deviations from the happy
 
 The root cause of this complexity is the interface itself. Simple interfaces are pure interfaces 
 (in the functional programming sense) with well defined and isolated effects. 
-This is `Reconciler` anything but, as neither the input not the output types convey any real useful information.
+This `Reconciler` interface is anything but, 
+as neither the input not the output types convey any real useful information.
 
 There are other challenges we have to deal with when implementing a custom controller.
 For example, we are generally not trying to stand up one service at a time, 
 rather a suite of services, with ordering dependencies between them. 
-For example, in Azure, we may require that the resource group is provisioned before we create a SQL database in this resource group.
+For example, in Azure, 
+we may require that the resource group is provisioned before we create a SQL server in this resource group.
 
 The typical workflow in the reconcile loop is the following pseudocode:
 
@@ -171,7 +173,6 @@ There is a need to generify.
 To solve the dependency problem cleanly, as well as arrive at clean overall design, 
 it helps to take a step back and clarify some architectural principles that enable the design of a well behaved suite of operators.
 ​
-
 Our high level architecture is around central principle that each operator represents a single resource, 
 and manages it throughout its lifecycle. It has this one job and does it well.
 So much so that it is relied upon by every other resource in the Kubernetes cluster as a single source of truth about this resource.
