@@ -22,8 +22,8 @@ and for me Kubernetes is the first such framework or platform.
 Kubernetes started off as a platform for container orchestration. 
 It is declarative in nature - you specify what the desired state the system infrastructure 
 should be, and it attempts to configure the system accordingly. This is a robust pattern. 
-It focuses on the question "How many pods are running?" or "Is this service up?", 
-rather than questions such as "Did this pod start or stop?" or "Did the service go down?". 
+It focuses on the question *"How many pods are running?"* or *"Is this service up?"*, 
+rather than questions such as *"Did this pod start or stop?"* or *"Did the service go down?"*. 
 This is referred to as [*level triggering* in contrast to *edge triggering*](https://pediaa.com/what-is-the-difference-between-edge-and-level-triggering/#Edge%20Triggering).
 Kubernetes continually monitors this and attempts to self heal and is successfully able to do so in numerous cases.
 
