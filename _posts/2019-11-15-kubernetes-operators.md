@@ -351,7 +351,7 @@ const (
 ```
 
 Note that although not all states are always attainable for a given resource, 
-this enum is general enough to cover the possible states for any resource managed by CRUD operations, sync or async.
+this enum is general enough to cover the possible states for any resource managed by CRUD operations, sync or async, that Kubernetes might care about.
 
 So given an implementation of the `ResourceManager` interface, it's possible to implement the state transitions in the reconcile loop generically.
 
@@ -392,16 +392,18 @@ Specific instructions are given in the [Operatify](https://github.com/operatify/
 If you take a look at the Operatify repo, you may notice that there are a few key differences with what is presented here.
 These are intentionally omitted here for the purposes of clarity.
 
-It's not possible to talk at length about all the nuances in this blog post, but some are some worthy of mention to give general flavour:
+It's not possible to talk at length about all the nuances in this blog post, 
+but some are some worthy of mention to give a general flavour:
 
 #### Resource diffing and status
 
 The quality of your operator ends up being as good as your `ResourceManager` implementation. 
-The more accurately you capture the state of your resource in this operations, the more refined will be your operator.
+The more accurately you capture the state of your resource in these operations, 
+the more refined will be your operator.
 
 One of the key touchpoints is the `Verify` method of the `ResourceManager` interface. For example, 
-one may ask, what is the best way to determine whether the resource is invalid, 
-and if so, whether an update will suffice, or whether it needs to be recreated?
+one may ask, *"what is the best way to determine whether the resource is invalid, 
+and if so, whether an update will suffice, or whether it needs to be recreated?"*
 
 There are several ways one could go about this. 
 One way is to fetch the external resource, inspect its properties, and compare those with the manifest's `spec`.
@@ -427,11 +429,13 @@ The reconciler recognises an annotation `[annotation-base-name]/access-permissio
 Read permission is implicit. For example `"CD"` is permission to create and delete, `"CUD"` is everything (the default if this annotation is not defined), and anything that doesn't have these initials (e.g. `"none"`)
  is read-only permissions.
  
-Read-only permission has a specific purpose - it allows one to assert the state of a dependent resource without updating it. For example, we can assert that an Azure resource group is created in the right location.
-If for example, the `Verify` method returns `VerifyResultUpdateRequired` and update permission is not set, it results in failure.
+Read-only permission has a specific purpose - it allows one to assert the state of a dependent resource without updating it.
+If for example the desired state for a resource is not satisfied, 
+and the `Verify` method returns `VerifyResultUpdateRequired`, but the update permission is not set, 
+it results in failure.
 
 Delete works slightly different - if this permission is not set, it will simply not delete the external resource when the Kubernetes resource is delete.
-However if the `Verify` method returns `VerifyResultRecreateRequired` and delete permission is not present, it will return an error.
+However if the `Verify` method returns `VerifyResultRecreateRequired` and delete permission is not present, it will result in failure.
 
 #### Implementing a handler upon success
 
@@ -446,8 +450,8 @@ This the only instance where custom interactions with Kubernetes are necessary. 
 Operators provide a very useful mechanism for extending Kubernetes, 
 and really help to unlock the full potential of Kubernetes as a end-to-end infrastructure management platform.
 
-However they are not all that easy to implement well. 
-Hopefully some of the suggestions offered here may make it easier and help to avoid some of the potential pitfalls. 
+However they are not that easy to implement well. 
+Hopefully some of the suggestions offered here may help to avoid some of the potential pitfalls. 
 
-The [Operatify](https://github.com/operatify/operatify) project may of particular interest to you 
-if you are looking to implement an operator for CRUD-managed infrastructure resources.
+The [Operatify](https://github.com/operatify/operatify) project may also be of particular interest to you 
+if you are looking to implement an operator, or a suite of operators, for CRUD-managed infrastructure resources.
