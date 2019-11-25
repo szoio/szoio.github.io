@@ -2,7 +2,7 @@
 layout: post
 slug: kubernetes-operators-for-resource-management
 title: Kubernetes operators for resource management
-date: 2019-11-15
+date: 2019-11-25
 ---
 
 In this post we discuss [Kubernetes](https://kubernetes.io/) and its emergence as a tool of choice for infrastructure orchestration. We specifically focus on 
@@ -389,15 +389,18 @@ Specific instructions are given in the [Operatify](https://github.com/operatify/
 
 ### Some finer details
 
-If you take a look at the Operatify repo, you'll see that there are a few key differences.
-These are intentionally omitted here for the purposes of clarity, but some are are still worthy of mention.
+If you take a look at the Operatify repo, you may notice that there are a few key differences with what is presented here.
+These are intentionally omitted here for the purposes of clarity.
+
+It's not possible to talk at length about all the nuances in this blog post, but some are some worthy of mention to give general flavour:
 
 #### Resource diffing and status
 
 The quality of your operator ends up being as good as your `ResourceManager` implementation. 
 The more accurately you capture the state of your resource in this operations, the more refined will be your operator.
 
-For example, one may ask, in the `Verify` implementation, what is the best way to determine whether the resource is invalid, 
+One of the key touchpoints is the `Verify` method of the `ResourceManager` interface. For example, 
+one may ask, what is the best way to determine whether the resource is invalid, 
 and if so, whether an update will suffice, or whether it needs to be recreated?
 
 There are several ways one could go about this. 
@@ -443,7 +446,8 @@ This the only instance where custom interactions with Kubernetes are necessary. 
 Operators provide a very useful mechanism for extending Kubernetes, 
 and really help to unlock the full potential of Kubernetes as a end-to-end infrastructure management platform.
 
-However they are not that easy to implement well. 
-Hopefully some of the suggestions offered here may make it easier and help to avoid some of the pitfalls. 
+However they are not all that easy to implement well. 
+Hopefully some of the suggestions offered here may make it easier and help to avoid some of the potential pitfalls. 
+
 The [Operatify](https://github.com/operatify/operatify) project may of particular interest to you 
 if you are looking to implement an operator for CRUD-managed infrastructure resources.
