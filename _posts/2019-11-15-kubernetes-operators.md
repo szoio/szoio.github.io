@@ -389,7 +389,7 @@ Specific instructions are given in the [Operatify](https://github.com/operatify/
 
 ### Some finer details
 
-Investigating the Operatify repo, you'll see that there are a few key differences.
+If you take a look at the Operatify repo, you'll see that there are a few key differences.
 These are intentionally omitted here for the purposes of clarity, but some are are still worthy of mention.
 
 #### Resource diffing and status
@@ -420,7 +420,7 @@ production resources that are managed by an operator - or at least know that the
 
 Coming back to the edge case *"what if we try to create an external resource and that resource is already present? Do we take ownership of it? Do we delete it when the Kubernetes resource is deleted."*
 
-The reconciler recognises an annotation `[annotation-base-name]/access-permissions` where it recognises each one of the permissions, create, update and delete via the initial. 
+The reconciler recognises an annotation `[annotation-base-name]/access-permissions`, in which it recognises each one of the permissions, create, update and delete via the initial. 
 Read permission is implicit. For example `"CD"` is permission to create and delete, `"CUD"` is everything (the default if this annotation is not defined), and anything that doesn't have these initials (e.g. `"none"`)
  is read-only permissions.
  
