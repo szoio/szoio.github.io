@@ -182,7 +182,7 @@ So much so that it is relied upon by every other resource in the Kubernetes clus
     A single one-to-one mapping between K8s custom resources and external managed resources helps to arrive at a clean design 
     and ensure separation of concerns.
 ​
-2. ***Operators verify the state of the external resource they manage, and keep the reconcile loop going until the resource is a state ready for consumption.***
+2. ***Operators verify the state of the external resource they manage, and repeat the reconcile loop until the resource is a state ready for consumption.***
 
     An operator should be treated as the single source of truth within the K8s cluster about the external resource it manages. 
     They are expected to do this job well as they may be relied upon by other components for this purpose 
